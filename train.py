@@ -67,7 +67,7 @@ class YoloTrain(object):
             self.true_sbboxes = tf.placeholder(dtype=tf.float32, name='sbboxes')
             self.true_mbboxes = tf.placeholder(dtype=tf.float32, name='mbboxes')
             self.true_lbboxes = tf.placeholder(dtype=tf.float32, name='lbboxes')
-            self.trainable     = tf.placeholder(dtype=tf.bool, name='training')
+            self.trainable    = tf.placeholder(dtype=tf.bool, name='training')
 
         with tf.name_scope("define_loss"):
             self.model = YOLOV3(self.input_data, self.trainable)
@@ -135,7 +135,8 @@ class YoloTrain(object):
             if os.path.exists(logdir): shutil.rmtree(logdir)
             os.mkdir(logdir)
             self.write_op = tf.summary.merge_all()
-            self.summary_writer  = tf.summary.FileWriter(logdir, graph=self.sess.graph)
+            self.summary_writer_train = tf.summary.FileWriter(logdir + "/train", graph=self.sess.graph)
+            self.summary_writer_test = tf.summary.FileWriter(logdir + "/test", graph=self.sess.graph)
 
 
     def train(self):
@@ -171,11 +172,12 @@ class YoloTrain(object):
                 })
 
                 train_epoch_loss.append(train_step_loss)
-                self.summary_writer.add_summary(summary, global_step_val)
+                self.summary_writer_train.add_summary(summary, global_step_val)
                 pbar.set_description("train loss: %.2f" %train_step_loss)
 
             for test_data in self.testset:
-                test_step_loss = self.sess.run( self.loss, feed_dict={
+                summary, test_step_loss = self.sess.run(
+                    [self.write_op, self.loss], feed_dict={
                                                 self.input_data:   test_data[0],
                                                 self.label_sbbox:  test_data[1],
                                                 self.label_mbbox:  test_data[2],
@@ -187,6 +189,8 @@ class YoloTrain(object):
                 })
 
                 test_epoch_loss.append(test_step_loss)
+                self.summary_writer_test.add_summary(summary, global_step_val)
+
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
             ckpt_file = "/checkpoints/yolov3_test_loss=%.4f.ckpt" % test_epoch_loss
