@@ -21,6 +21,8 @@ from tqdm import tqdm
 from core.dataset import Dataset
 from core.yolov3 import YOLOV3
 from core.config import cfg
+import datetime
+import subprocess as sp
 
 
 class YoloTrain(object):
@@ -34,6 +36,7 @@ class YoloTrain(object):
         self.second_stage_epochs = cfg.TRAIN.SECOND_STAGE_EPOCHS
         self.warmup_periods      = cfg.TRAIN.WARMUP_EPOCHS
         self.initial_weight      = cfg.TRAIN.INITIAL_WEIGHT
+        self.chkpnt_to_restore   = cfg.TRAIN.RESTORE_CHKPT
         self.time                = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
         self.moving_ave_decay    = cfg.YOLO.MOVING_AVE_DECAY
         self.max_bbox_per_scale  = 150
@@ -42,6 +45,19 @@ class YoloTrain(object):
         self.testset             = Dataset('test')
         self.steps_per_period    = len(self.trainset)
         self.sess                = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+        self.folder_name         = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
+
+        with tf.name_scope('output_folder'):
+            timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
+            for i in range(0, len(sp.getstatusoutput('git branch')[1].split())):
+                if sp.getstatusoutput('git branch')[1].split()[i] == '*':
+                    gitBranch = sp.getstatusoutput('git branch')[1].split()[i + 1]
+            gitCommitID = sp.getstatusoutput('git rev-parse --short HEAD')[1]
+            self.output_folder = os.path.join(self.folder_name[0] + self.folder_name[1] + '_' + timestr + '_' + gitCommitID)
+            if not os.path.exists(self.output_folder):
+                os.makedirs(self.output_folder)
+            cfg_new_path = os.path.join(self.output_folder, 'configFile.txt')
+            shutil.copyfile('/home/tamar/RecceLite_code_packages/yolo3_baseline2/core/config.py', cfg_new_path)
 
         with tf.name_scope('define_input'):
             self.input_data   = tf.placeholder(dtype=tf.float32, name='input_data')
@@ -115,7 +131,7 @@ class YoloTrain(object):
             tf.summary.scalar("prob_loss",  self.prob_loss)
             tf.summary.scalar("total_loss", self.loss)
 
-            logdir = "./data/log/"
+            logdir = self.output_folder + "/log/"
             if os.path.exists(logdir): shutil.rmtree(logdir)
             os.mkdir(logdir)
             self.write_op = tf.summary.merge_all()
@@ -125,10 +141,10 @@ class YoloTrain(object):
     def train(self):
         self.sess.run(tf.global_variables_initializer())
         try:
-            print('=> Restoring weights from: %s ... ' % self.initial_weight)
-            self.loader.restore(self.sess, self.initial_weight)
+            print('=> Restoring weights from: %s ... ' % self.chkpnt_to_restore)
+            self.loader.restore(self.sess, self.chkpnt_to_restore)
         except:
-            print('=> %s does not exist !!!' % self.initial_weight)
+            print('=> %s does not exist !!!' % self.chkpnt_to_restore)
             print('=> Now it starts to train YOLOV3 from scratch ...')
             self.first_stage_epochs = 0
 
@@ -173,11 +189,11 @@ class YoloTrain(object):
                 test_epoch_loss.append(test_step_loss)
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
-            ckpt_file = "./checkpoint/yolov3_test_loss=%.4f.ckpt" % test_epoch_loss
+            ckpt_file = "/checkpoints/yolov3_test_loss=%.4f.ckpt" % test_epoch_loss
             log_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             print("=> Epoch: %2d Time: %s Train loss: %.2f Test loss: %.2f Saving %s ..."
                             %(epoch, log_time, train_epoch_loss, test_epoch_loss, ckpt_file))
-            self.saver.save(self.sess, ckpt_file, global_step=epoch)
+            self.saver.save(self.sess, save_path=os.path.join(self.output_folder + ckpt_file), global_step=epoch)
 
 
 
