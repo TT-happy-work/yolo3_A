@@ -42,7 +42,7 @@ __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_test_loss=14.7788.ckpt-2
 __C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_train_all.txt"
 __C.TRAIN.BATCH_SIZE            = 6
 __C.TRAIN.INPUT_SIZE            = [320, 352, 384, 416, 448, 480, 512, 544, 576, 608]
-__C.TRAIN.DATA_AUG              = True
+__C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
 __C.TRAIN.WARMUP_EPOCHS         = 2

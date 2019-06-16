@@ -158,7 +158,7 @@ class Dataset(object):
         if not os.path.exists(image_path):
             raise KeyError("%s does not exist ... " %image_path)
         image = np.array(cv2.imread(image_path))
-        bboxes = np.array([list(map(int, box.split(','))) for box in line[1:]])
+        bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
 
         if self.data_aug:
             image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
@@ -202,7 +202,7 @@ class Dataset(object):
             bbox_class_ind = bbox[4]
 
             onehot = np.zeros(self.num_classes, dtype=np.float)
-            onehot[bbox_class_ind] = 1.0
+            onehot[int(bbox_class_ind)] = 1.0
             uniform_distribution = np.full(self.num_classes, 1.0 / self.num_classes)
             deta = 0.01
             smooth_onehot = onehot * (1 - deta) + deta * uniform_distribution
