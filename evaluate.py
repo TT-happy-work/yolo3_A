@@ -22,7 +22,8 @@ from core.yolov3 import YOLOV3
 
 class YoloTest(object):
     def __init__(self):
-        self.input_size       = cfg.TEST.INPUT_SIZE
+        self.target_height    =  cfg.TEST.IMAGE_H
+        self.target_width     = cfg.TEST.IMAGE_W
         self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
         self.classes          = utils.read_class_names(cfg.YOLO.CLASSES)
         self.num_classes      = len(self.classes)
@@ -55,7 +56,7 @@ class YoloTest(object):
         org_image = np.copy(image)
         org_h, org_w, _ = org_image.shape
 
-        image_data = utils.image_preporcess(image, [self.input_size, self.input_size])
+        image_data = utils.image_preporcess(image, self.target_height, self.target_width)
         image_data = image_data[np.newaxis, ...]
 
         pred_sbbox, pred_mbbox, pred_lbbox = self.sess.run(
@@ -90,7 +91,7 @@ class YoloTest(object):
                 image_path = annotation[0]
                 image_name = image_path.split('/')[-1]
                 image = cv2.imread(image_path)
-                bbox_data_gt = np.array([list(map(int, box.split(','))) for box in annotation[1:]])
+                bbox_data_gt = np.array([list(map(float, box.split(','))) for box in annotation[1:]])
 
                 if len(bbox_data_gt) == 0:
                     bboxes_gt=[]
@@ -99,7 +100,7 @@ class YoloTest(object):
                     bboxes_gt, classes_gt = bbox_data_gt[:, :4], bbox_data_gt[:, 4]
                 ground_truth_path = os.path.join(ground_truth_dir_path, str(num) + '.txt')
 
-                print('=> ground truth of %s:' % image_name)
+                #print('=> ground truth of %s:' % image_name)
                 num_bbox_gt = len(bboxes_gt)
                 with open(ground_truth_path, 'w') as f:
                     for i in range(num_bbox_gt):

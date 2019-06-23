@@ -180,6 +180,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
   # sort the dictionary by decreasing value, into a list of tuples
   sorted_dic_by_value = sorted(dictionary.items(), key=operator.itemgetter(1))
   # unpacking the list of tuples into two lists
+  print(sorted_dic_by_value)
   sorted_keys, sorted_values = zip(*sorted_dic_by_value)
   # 
   if true_p_bar != "":

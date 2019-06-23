@@ -25,11 +25,12 @@ class Dataset(object):
     """implement Dataset here"""
     def __init__(self, dataset_type):
         self.annot_path  = cfg.TRAIN.ANNOT_PATH if dataset_type == 'train' else cfg.TEST.ANNOT_PATH
-        self.input_sizes = cfg.TRAIN.INPUT_SIZE if dataset_type == 'train' else cfg.TEST.INPUT_SIZE
+        self.input_height = cfg.TRAIN.IMAGE_H if dataset_type == 'train' else cfg.TEST.IMAGE_H
+        self.input_width = cfg.TRAIN.IMAGE_W if dataset_type == 'train' else cfg.TEST.IMAGE_W
+
         self.batch_size  = cfg.TRAIN.BATCH_SIZE if dataset_type == 'train' else cfg.TEST.BATCH_SIZE
         self.data_aug    = cfg.TRAIN.DATA_AUG   if dataset_type == 'train' else cfg.TEST.DATA_AUG
 
-        self.train_input_sizes = cfg.TRAIN.INPUT_SIZE
         self.strides = np.array(cfg.YOLO.STRIDES)
         self.classes = utils.read_class_names(cfg.YOLO.CLASSES)
         self.num_classes = len(self.classes)
@@ -56,10 +57,9 @@ class Dataset(object):
     def __next__(self):
 
         with tf.device('/cpu:0'):
-            self.train_input_size = random.choice(self.train_input_sizes)
-            self.train_output_sizes = self.train_input_size // self.strides
+            self.train_output_sizes = self.input_height // self.strides
 
-            batch_image = np.zeros((self.batch_size, self.train_input_size, self.train_input_size, 3))
+            batch_image = np.zeros((self.batch_size, self.input_height, self.input_width, 3))
 
             batch_label_sbbox = np.zeros((self.batch_size, self.train_output_sizes[0], self.train_output_sizes[0],
                                           self.anchor_per_scale, 5 + self.num_classes))
@@ -165,7 +165,7 @@ class Dataset(object):
             image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
             image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
 
-        image, bboxes = utils.image_preporcess(np.copy(image), [self.train_input_size, self.train_input_size], np.copy(bboxes))
+        image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))
         return image, bboxes
 
     def bbox_iou(self, boxes1, boxes2):
@@ -223,7 +223,6 @@ class Dataset(object):
 
                 if np.any(iou_mask):
                     xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
-
                     label[i][yind, xind, iou_mask, :] = 0
                     label[i][yind, xind, iou_mask, 0:4] = bbox_xywh
                     label[i][yind, xind, iou_mask, 4:5] = 1.0

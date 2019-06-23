@@ -102,18 +102,19 @@ class YOLOV3(object):
 
         conv_shape       = tf.shape(conv_output)
         batch_size       = conv_shape[0]
-        output_size      = conv_shape[1]
+        output_h         = conv_shape[1]
+        output_w         = conv_shape[2]
         anchor_per_scale = len(anchors)
 
-        conv_output = tf.reshape(conv_output, (batch_size, output_size, output_size, anchor_per_scale, 5 + self.num_class))
+        conv_output = tf.reshape(conv_output, (batch_size, output_h, output_w, anchor_per_scale, 5 + self.num_class))
 
         conv_raw_dxdy = conv_output[:, :, :, :, 0:2]
         conv_raw_dwdh = conv_output[:, :, :, :, 2:4]
         conv_raw_conf = conv_output[:, :, :, :, 4:5]
         conv_raw_prob = conv_output[:, :, :, :, 5: ]
 
-        y = tf.tile(tf.range(output_size, dtype=tf.int32)[:, tf.newaxis], [1, output_size])
-        x = tf.tile(tf.range(output_size, dtype=tf.int32)[tf.newaxis, :], [output_size, 1])
+        y = tf.tile(tf.range(output_h, dtype=tf.int32)[:, tf.newaxis], [1, output_h])
+        x = tf.tile(tf.range(output_w, dtype=tf.int32)[tf.newaxis, :], [output_w, 1])
 
         xy_grid = tf.concat([x[:, :, tf.newaxis], y[:, :, tf.newaxis]], axis=-1)
         xy_grid = tf.tile(xy_grid[tf.newaxis, :, :, tf.newaxis, :], [batch_size, 1, 1, anchor_per_scale, 1])
