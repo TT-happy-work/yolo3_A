@@ -188,9 +188,12 @@ class YOLOV3(object):
 
         conv_shape  = tf.shape(conv)
         batch_size  = conv_shape[0]
-        output_size = conv_shape[1]
-        input_size  = stride * output_size
-        conv = tf.reshape(conv, (batch_size, output_size, output_size,
+        output_h = conv_shape[1]
+        output_w = conv_shape[2]
+
+
+        input_size  = stride * output_w
+        conv = tf.reshape(conv, (batch_size, output_h, output_w,
                                  self.anchor_per_scale, 5 + self.num_class))
         conv_raw_conf = conv[:, :, :, :, 4:5]
         conv_raw_prob = conv[:, :, :, :, 5:]
