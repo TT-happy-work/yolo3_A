@@ -57,15 +57,17 @@ class Dataset(object):
     def __next__(self):
 
         with tf.device('/cpu:0'):
-            self.train_output_sizes = self.input_height // self.strides
+            self.train_output_sizes_h = self.input_height // self.strides
+            self.train_output_sizes_w = self.input_width // self.strides
+
 
             batch_image = np.zeros((self.batch_size, self.input_height, self.input_width, 3))
 
-            batch_label_sbbox = np.zeros((self.batch_size, self.train_output_sizes[0], self.train_output_sizes[0],
+            batch_label_sbbox = np.zeros((self.batch_size, self.train_output_sizes_h[0], self.train_output_sizes_w[0],
                                           self.anchor_per_scale, 5 + self.num_classes))
-            batch_label_mbbox = np.zeros((self.batch_size, self.train_output_sizes[1], self.train_output_sizes[1],
+            batch_label_mbbox = np.zeros((self.batch_size, self.train_output_sizes_h[1], self.train_output_sizes_w[1],
                                           self.anchor_per_scale, 5 + self.num_classes))
-            batch_label_lbbox = np.zeros((self.batch_size, self.train_output_sizes[2], self.train_output_sizes[2],
+            batch_label_lbbox = np.zeros((self.batch_size, self.train_output_sizes_h[2], self.train_output_sizes_w[2],
                                           self.anchor_per_scale, 5 + self.num_classes))
 
             batch_sbboxes = np.zeros((self.batch_size, self.max_bbox_per_scale, 4))
@@ -192,7 +194,7 @@ class Dataset(object):
 
     def preprocess_true_boxes(self, bboxes):
 
-        label = [np.zeros((self.train_output_sizes[i], self.train_output_sizes[i], self.anchor_per_scale,
+        label = [np.zeros((self.train_output_sizes_h[i], self.train_output_sizes_w[i], self.anchor_per_scale,
                            5 + self.num_classes)) for i in range(3)]
         bboxes_xywh = [np.zeros((self.max_bbox_per_scale, 4)) for _ in range(3)]
         bbox_count = np.zeros((3,))

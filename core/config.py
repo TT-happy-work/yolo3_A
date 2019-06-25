@@ -42,14 +42,14 @@ __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_train_all.txt"
 __C.TRAIN.BATCH_SIZE            = 1
-__C.TRAIN.IMAGE_H                = 2464
-__C.TRAIN.IMAGE_W                = 3296
+__C.TRAIN.IMAGE_H               = 640 #2464
+__C.TRAIN.IMAGE_W               = 800 #3296
 __C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
 __C.TRAIN.WARMUP_EPOCHS         = 2
-__C.TRAIN.FISRT_STAGE_EPOCHS    = 20
-__C.TRAIN.SECOND_STAGE_EPOCHS   = 30
+__C.TRAIN.FISRT_STAGE_EPOCHS    = 2
+__C.TRAIN.SECOND_STAGE_EPOCHS   = 3
 
 
 # TEST options
@@ -59,8 +59,8 @@ __C.TEST                        = edict()
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=nan.ckpt-50"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_test_all.txt"
 __C.TEST.BATCH_SIZE             = 2
-__C.TEST.IMAGE_H                = 2464
-__C.TEST.IMAGE_W                = 3296
+__C.TEST.IMAGE_H                = 640 #2464
+__C.TEST.IMAGE_W                = 800 #3296
 __C.TEST.DATA_AUG               = False
 __C.TEST.WRITE_IMAGE            = True
 __C.TEST.WRITE_IMAGE_PATH       = "./data/detection/"

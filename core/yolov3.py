@@ -113,8 +113,8 @@ class YOLOV3(object):
         conv_raw_conf = conv_output[:, :, :, :, 4:5]
         conv_raw_prob = conv_output[:, :, :, :, 5: ]
 
-        y = tf.tile(tf.range(output_h, dtype=tf.int32)[:, tf.newaxis], [1, output_h])
-        x = tf.tile(tf.range(output_w, dtype=tf.int32)[tf.newaxis, :], [output_w, 1])
+        y = tf.tile(tf.range(output_h, dtype=tf.int32)[:, tf.newaxis], [1, output_w])
+        x = tf.tile(tf.range(output_w, dtype=tf.int32)[tf.newaxis, :], [output_h, 1])
 
         xy_grid = tf.concat([x[:, :, tf.newaxis], y[:, :, tf.newaxis]], axis=-1)
         xy_grid = tf.tile(xy_grid[tf.newaxis, :, :, tf.newaxis, :], [batch_size, 1, 1, anchor_per_scale, 1])
