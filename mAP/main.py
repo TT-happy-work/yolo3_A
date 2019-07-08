@@ -27,7 +27,7 @@ if args.set_class_iou is not None:
   specific_iou_flagged = True
 
 # if there are no images then no animation can be shown
-img_path = 'images'
+img_path = '/home/tamar/DBs/Reccelite/Tagging_1_2_img' #'images'
 if os.path.exists(img_path): 
   for dirpath, dirnames, files in os.walk(img_path):
     if not files:
@@ -37,7 +37,7 @@ else:
   args.no_animation = True
 
 # try to import OpenCV if the user didn't choose the option --no-animation
-show_animation = False
+show_animation = True
 if not args.no_animation:
   try:
     import cv2
@@ -441,6 +441,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
         # find ground truth image
         ground_truth_img = glob.glob1(img_path, file_id + ".*")
         #tifCounter = len(glob.glob1(myPath,"*.tif"))
+        print('\nimg_path =',img_path, '; ground_truth_img =',ground_truth_img, '; class_name =',class_name)
         if len(ground_truth_img) == 0:
           error("Error. Image not found with id: " + file_id)
         elif len(ground_truth_img) > 1:

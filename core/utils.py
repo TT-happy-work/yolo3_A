@@ -167,7 +167,7 @@ def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
     return best_bboxes
 
 
-def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
+def postprocess_boxes(pred_bbox, org_img_shape, input_h, input_w, score_threshold):
 
     valid_scale=[0, np.inf]
     pred_bbox = np.array(pred_bbox)
@@ -181,10 +181,10 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
                                 pred_xywh[:, :2] + pred_xywh[:, 2:] * 0.5], axis=-1)
     # # (2) (xmin, ymin, xmax, ymax) -> (xmin_org, ymin_org, xmax_org, ymax_org)
     org_h, org_w = org_img_shape
-    resize_ratio = min(input_size / org_w, input_size / org_h)
+    resize_ratio = min(input_w / org_w, input_h / org_h)
 
-    dw = (input_size - resize_ratio * org_w) / 2
-    dh = (input_size - resize_ratio * org_h) / 2
+    dw = (input_w - resize_ratio * org_w) / 2
+    dh = (input_h - resize_ratio * org_h) / 2
 
     pred_coor[:, 0::2] = 1.0 * (pred_coor[:, 0::2] - dw) / resize_ratio
     pred_coor[:, 1::2] = 1.0 * (pred_coor[:, 1::2] - dh) / resize_ratio

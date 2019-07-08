@@ -70,7 +70,7 @@ class YoloTest(object):
         pred_bbox = np.concatenate([np.reshape(pred_sbbox, (-1, 5 + self.num_classes)),
                                     np.reshape(pred_mbbox, (-1, 5 + self.num_classes)),
                                     np.reshape(pred_lbbox, (-1, 5 + self.num_classes))], axis=0)
-        bboxes = utils.postprocess_boxes(pred_bbox, (org_h, org_w), self.input_size, self.score_threshold)
+        bboxes = utils.postprocess_boxes(pred_bbox, (org_h, org_w), self.target_height, self.target_width, self.score_threshold)
         bboxes = utils.nms(bboxes, self.iou_threshold)
 
         return bboxes
