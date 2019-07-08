@@ -5,6 +5,7 @@ import shutil
 import operator
 import sys
 import argparse
+import cv2
 
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
@@ -37,11 +38,11 @@ else:
   args.no_animation = True
 
 # try to import OpenCV if the user didn't choose the option --no-animation
-show_animation = True
+show_animation = False
 if not args.no_animation:
   try:
     import cv2
-    show_animation = True
+    show_animation = False
   except ImportError:
     print("\"opencv-python\" not found, please install to visualize the results.")
     args.no_animation = True
@@ -554,7 +555,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         if ovmax > 0: # if there is intersections between the bounding-boxes
-          bbgt = [ int(x) for x in gt_match["bbox"].split() ]
+          bbgt = [ int(float(x)) for x in gt_match["bbox"].split() ]
           cv2.rectangle(img,(bbgt[0],bbgt[1]),(bbgt[2],bbgt[3]),light_blue,2)
           cv2.rectangle(img_cumulative,(bbgt[0],bbgt[1]),(bbgt[2],bbgt[3]),light_blue,2)
           cv2.putText(img_cumulative, class_name, (bbgt[0],bbgt[1] - 5), font, 0.6, light_blue, 1, cv2.LINE_AA)
