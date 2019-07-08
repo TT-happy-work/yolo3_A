@@ -225,10 +225,12 @@ class Dataset(object):
 
                 if np.any(iou_mask):
                     xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
-                    if yind >= label[i].shape[0]:
-                        yind = label[i].shape[0] -1
-                    if xind >= label[i].shape[1]:
-                        xind = label[i].shape[1] -1
+
+                    xind, yind = abs(xind), abs(yind)
+                    if xind >= label[i].shape[0]:
+                        xind = label[i].shape[0] -1
+                    if yind >= label[i].shape[1]:
+                        yind = label[i].shape[1] -1
                     label[i][yind, xind, iou_mask, :] = 0
                     label[i][yind, xind, iou_mask, 0:4] = bbox_xywh
                     label[i][yind, xind, iou_mask, 4:5] = 1.0
@@ -237,7 +239,6 @@ class Dataset(object):
                     bbox_ind = int(bbox_count[i] % self.max_bbox_per_scale)
                     bboxes_xywh[i][bbox_ind, :4] = bbox_xywh
                     bbox_count[i] += 1
-
                     exist_positive = True
 
             if not exist_positive:
@@ -246,6 +247,7 @@ class Dataset(object):
                 best_anchor = int(best_anchor_ind % self.anchor_per_scale)
                 xind, yind = np.floor(bbox_xywh_scaled[best_detect, 0:2]).astype(np.int32)
 
+                xind, yind = abs(xind), abs(yind)
                 if xind >= label[best_detect].shape[0]:
                     xind = label[best_detect].shape[0] -1
                 if yind >= label[best_detect].shape[1]:
