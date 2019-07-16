@@ -193,10 +193,10 @@ class YoloTrain(object):
 
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
-            ckpt_file = "/checkpoints/yolov3_test_loss=%.4f.ckpt" % test_epoch_loss
+            ckpt_file = "/checkpoints/yolov3_epoch=%s_test_loss=%.4f.ckpt" % (epoch, test_epoch_loss)
             log_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             print("=> Epoch: %2d Time: %s Train loss: %.2f Test loss: %.2f Saving %s ..."
-                            %(epoch, log_time, train_epoch_loss, test_epoch_loss, ckpt_file))
+                            %(epoch, log_time, train_epoch_loss, test_epoch_loss, self.output_folder + ckpt_file))
             self.saver.save(self.sess, save_path=os.path.join(self.output_folder + ckpt_file), global_step=epoch)
 
 
