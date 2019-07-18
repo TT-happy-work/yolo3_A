@@ -6,6 +6,8 @@ import operator
 import sys
 import argparse
 import cv2
+from collections import defaultdict
+import numpy as np
 
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
@@ -418,6 +420,8 @@ for class_index, class_name in enumerate(gt_classes):
 """
 sum_AP = 0.0
 ap_dictionary = {}
+conf_T = defaultdict(list)
+conf_F = defaultdict(list)
 # open file to store the results
 with open(results_files_path + "/results.txt", 'w') as results_file:
   results_file.write("# AP and precision/recall per class\n")
@@ -499,6 +503,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
             if not bool(gt_match["used"]):
               # true positive
               tp[idx] = 1
+              conf_T[class_name].append(float(prediction['confidence']))
               gt_match["used"] = True
               count_true_positives[class_name] += 1
               # update the ".json" file
@@ -513,6 +518,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
                 status = "REPEATED MATCH!"
       else:
         # false positive
+        conf_F[class_name].append(float(prediction['confidence']))
         fp[idx] = 1
         if ovmax > 0:
           status = "INSUFFICIENT OVERLAP"
@@ -633,7 +639,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
       # Alternative option -> normal display
       #plt.show()
       # save the plot
-      fig.savefig(results_files_path + "/classes/" + class_name + ".png")
+      fig.savefig(results_files_path + "/classes/mAP of " + class_name + ".png")
       plt.cla() # clear axes for next plot
 
   if show_animation:
@@ -695,6 +701,7 @@ if draw_plot:
     '',
     )
 
+
 """
  Write number of ground-truth objects per class to results.txt
 """
@@ -714,6 +721,8 @@ for class_name in pred_classes:
 
 """
  Plot the total number of occurences of each class in the "predicted" folder
+ Plot the amount of true/false positives Vs. Confidence - per class and total
+
 """
 if draw_plot:
   window_title = "Predicted Objects Info"
@@ -739,6 +748,29 @@ if draw_plot:
     plot_color,
     true_p_bar
     )
+
+  for cls in pred_counter_per_class.keys():
+    print('\n'+cls)
+    if len(conf_T[cls] + conf_T[cls]) == 0: continue
+    output_path = results_files_path + "/classes/Confidence reliability of " + cls + ".png"
+    #fig, ax = plt.subplots()
+    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    print(n_equal_bins)
+    opacity = 0.75
+    plt.hist(conf_T[cls], n_equal_bins, alpha=opacity, color='g', label='True Predictions')
+    plt.hist(conf_F[cls], n_equal_bins, alpha=opacity, color='r', label='False Predictions')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Confidence', fontsize='large')
+    plt.ylabel('Amount of Predictions', fontsize='large')
+    plot_title = "Relevancy of Confidence\n"
+    plot_title += str(pred_counter_per_class[cls]) + " predictions, "
+    plot_title += "Class " + cls
+    plt.title(plot_title, fontsize=14)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.show()
+
 
 """
  Write number of predicted objects per class to results.txt
