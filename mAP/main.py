@@ -192,11 +192,18 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     """
     fp_sorted = []
     tp_sorted = []
+    gt_sorted = []
     for key in sorted_keys:
       fp_sorted.append(dictionary[key] - true_p_bar[key])
       tp_sorted.append(true_p_bar[key])
-    plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions')
-    plt.barh(range(n_classes), tp_sorted, align='center', color='forestgreen', label='True Predictions', left=fp_sorted)
+      gt_sorted.append(gt_counter_per_class[key])
+    ##plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions')
+    ##plt.barh(range(n_classes), tp_sorted, align='center', color='forestgreen', label='True Predictions', left=fp_sorted)
+    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='True Predictions')
+    plt.barh(range(n_classes), list(np.array(gt_sorted)-np.array(tp_sorted)), align='center', color='orange', label='Mis-Detections', left=gt_sorted)
+    plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=list(2*np.array(gt_sorted)-np.array(tp_sorted)))
+    #plt.barh(range(n_classes), (gt_tp_sorted-tp_sorted), align='center', color='orange', label='Mis-Detections', left=gt_tp_sorted)
+    #plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=2*gt_tp_sorted-tp_sorted)
     # add legend
     plt.legend(loc='lower right')
     """
@@ -206,14 +213,24 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     axes = plt.gca()
     r = fig.canvas.get_renderer()
     for i, val in enumerate(sorted_values):
-      fp_val = fp_sorted[i]
-      tp_val = tp_sorted[i]
-      fp_str_val = " " + str(fp_val)
-      tp_str_val = fp_str_val + " " + str(tp_val)
+      fp_val = fp_sorted[i] # red
+      gt_minus_tp_val = gt_sorted[i]-tp_sorted[i] # orange
+      gt_val = gt_sorted[i] # green
+      ##fp_str_val = " " + str(fp_val)
+      ##tp_str_val = fp_str_val + " " + str(tp_val)
+      green_val = " " + str(gt_val)
+      orange_val = green_val + " " + str(gt_minus_tp_val)
+      red_val = orange_val + " " + str(fp_val)
       # trick to paint multicolor with offset:
       #   first paint everything and then repaint the first number
-      t = plt.text(val, i, tp_str_val, color='forestgreen', va='center', fontweight='bold')
-      plt.text(val, i, fp_str_val, color='crimson', va='center', fontweight='bold')
+      ##t = plt.text(val, i, tp_str_val, color='forestgreen', va='center', fontweight='bold')
+      ##plt.text(val, i, fp_str_val, color='crimson', va='center', fontweight='bold')
+      t = plt.text(fp_val+gt_minus_tp_val+gt_val, i, red_val, color='crimson', va='center', fontweight='bold')
+      plt.text(fp_val+gt_minus_tp_val+gt_val, i, green_val, color='forestgreen', va='center', fontweight='bold')
+      plt.text(fp_val+gt_minus_tp_val+gt_val, i, orange_val, color='orange', va='center', fontweight='bold')
+
+
+
       if i == (len(sorted_values)-1): # largest bar
         adjust_axes(r, t, fig, axes)
   else:
@@ -752,7 +769,7 @@ if draw_plot:
   for cls in pred_counter_per_class.keys():
     print('\n'+cls)
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
-    output_path = results_files_path + "/classes/Confidence reliability of " + cls + ".png"
+    output_path = results_files_path + "/Confidence reliability of " + cls + ".png"
     #fig, ax = plt.subplots()
     n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
     print(n_equal_bins)
@@ -769,7 +786,7 @@ if draw_plot:
     plt.legend()
     plt.tight_layout()
     plt.savefig(output_path)
-    plt.show()
+    #plt.show()
 
 
 """
