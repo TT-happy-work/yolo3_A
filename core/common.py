@@ -28,7 +28,7 @@ def convolutional(input_data, filters_shape, trainable, name, downsample=False, 
             padding = "SAME"
 
         weight = tf.get_variable(name='weight', dtype=tf.float32, trainable=True,
-                                 shape=filters_shape, initializer=tf.random_normal_initializer(stddev=0.01))
+                                 shape=filters_shape, initializer=tf.random_normal_initializer(stddev=0.01, seed=0))
         conv = tf.nn.conv2d(input=input_data, filter=weight, strides=strides, padding=padding)
 
         if bn:
@@ -82,7 +82,7 @@ def upsample(input_data, name, method="deconv"):
         # replace resize_nearest_neighbor with conv2d_transpose To support TensorRT optimization
         numm_filter = input_data.shape.as_list()[-1]
         output = tf.layers.conv2d_transpose(input_data, numm_filter, kernel_size=2, padding='same',
-                                            strides=(2,2), kernel_initializer=tf.random_normal_initializer())
+                                            strides=(2,2), kernel_initializer=tf.random_normal_initializer(seed=0))
 
     return output
 

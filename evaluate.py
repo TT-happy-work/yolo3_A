@@ -160,7 +160,7 @@ class YoloTest(object):
                 print('\t' + str(bbox_mess).strip())
 
 
-if __name__ == '__main__': YoloTest().evaluate()
-
-
-
+if __name__ == '__main__':
+    np.random.seed(0)
+    tf.set_random_seed(0)
+    YoloTest().evaluate()

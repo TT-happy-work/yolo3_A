@@ -201,7 +201,10 @@ class YoloTrain(object):
 
 
 
-if __name__ == '__main__': YoloTrain().train()
+if __name__ == '__main__':
+    np.random.seed(0)
+    tf.set_random_seed(0)
+    YoloTrain().train()
 
 
 

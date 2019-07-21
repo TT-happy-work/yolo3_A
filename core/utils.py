@@ -73,7 +73,7 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
 
     random.seed(0)
     random.shuffle(colors)
-    random.seed(None)
+    # random.seed(None)
 
     for i, bbox in enumerate(bboxes):
         coor = np.array(bbox[:4], dtype=np.int32)

@@ -8,6 +8,10 @@ import argparse
 import cv2
 from collections import defaultdict
 import numpy as np
+import random
+
+random.seed(0)
+np.random.seed(0)
 
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
@@ -226,8 +230,8 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       ##t = plt.text(val, i, tp_str_val, color='forestgreen', va='center', fontweight='bold')
       ##plt.text(val, i, fp_str_val, color='crimson', va='center', fontweight='bold')
       t = plt.text(fp_val+gt_minus_tp_val+gt_val, i, red_val, color='crimson', va='center', fontweight='bold')
-      plt.text(fp_val+gt_minus_tp_val+gt_val, i, green_val, color='forestgreen', va='center', fontweight='bold')
       plt.text(fp_val+gt_minus_tp_val+gt_val, i, orange_val, color='orange', va='center', fontweight='bold')
+      plt.text(fp_val+gt_minus_tp_val+gt_val, i, green_val, color='forestgreen', va='center', fontweight='bold')
 
 
 
