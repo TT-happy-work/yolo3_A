@@ -6,7 +6,7 @@ import operator
 import sys
 import argparse
 import cv2
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import numpy as np
 import random
 
@@ -201,13 +201,9 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       fp_sorted.append(dictionary[key] - true_p_bar[key])
       tp_sorted.append(true_p_bar[key])
       gt_sorted.append(gt_counter_per_class[key])
-    ##plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions')
-    ##plt.barh(range(n_classes), tp_sorted, align='center', color='forestgreen', label='True Predictions', left=fp_sorted)
     plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='True Predictions')
     plt.barh(range(n_classes), list(np.array(gt_sorted)-np.array(tp_sorted)), align='center', color='orange', label='Mis-Detections', left=gt_sorted)
     plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=list(2*np.array(gt_sorted)-np.array(tp_sorted)))
-    #plt.barh(range(n_classes), (gt_tp_sorted-tp_sorted), align='center', color='orange', label='Mis-Detections', left=gt_tp_sorted)
-    #plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=2*gt_tp_sorted-tp_sorted)
     # add legend
     plt.legend(loc='lower right')
     """
@@ -220,20 +216,14 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       fp_val = fp_sorted[i] # red
       gt_minus_tp_val = gt_sorted[i]-tp_sorted[i] # orange
       gt_val = gt_sorted[i] # green
-      ##fp_str_val = " " + str(fp_val)
-      ##tp_str_val = fp_str_val + " " + str(tp_val)
       green_val = " " + str(gt_val)
       orange_val = green_val + " " + str(gt_minus_tp_val)
       red_val = orange_val + " " + str(fp_val)
       # trick to paint multicolor with offset:
       #   first paint everything and then repaint the first number
-      ##t = plt.text(val, i, tp_str_val, color='forestgreen', va='center', fontweight='bold')
-      ##plt.text(val, i, fp_str_val, color='crimson', va='center', fontweight='bold')
       t = plt.text(fp_val+gt_minus_tp_val+gt_val, i, red_val, color='crimson', va='center', fontweight='bold')
       plt.text(fp_val+gt_minus_tp_val+gt_val, i, orange_val, color='orange', va='center', fontweight='bold')
       plt.text(fp_val+gt_minus_tp_val+gt_val, i, green_val, color='forestgreen', va='center', fontweight='bold')
-
-
 
       if i == (len(sorted_values)-1): # largest bar
         adjust_axes(r, t, fig, axes)
@@ -787,7 +777,10 @@ if draw_plot:
     plot_title += str(pred_counter_per_class[cls]) + " predictions, "
     plot_title += "Class " + cls
     plt.title(plot_title, fontsize=14)
-    plt.legend()
+    plt.xlim(0, 1)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
     plt.tight_layout()
     plt.savefig(output_path)
     #plt.show()
