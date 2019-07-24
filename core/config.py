@@ -47,7 +47,7 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 
 # TEST options
 __C.TEST                        = edict()
-
+#m
 ####__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1300_test_loss=nan.ckpt-1300"
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=247.9916.ckpt-1294"
 ####__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
