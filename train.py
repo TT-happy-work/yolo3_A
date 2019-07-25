@@ -53,7 +53,7 @@ class YoloTrain(object):
                 if sp.getstatusoutput('git branch')[1].split()[i] == '*':
                     gitBranch = sp.getstatusoutput('git branch')[1].split()[i + 1]
             gitCommitID = sp.getstatusoutput('git rev-parse --short HEAD')[1]
-            self.output_folder = os.path.join(self.folder_name[0] + self.folder_name[1] + '_' + timestr + '_' + gitCommitID)
+            self.output_folder = os.path.join(self.folder_name[0] + self.folder_name[1] + '_' + gitBranch + '_' + timestr + '_' + gitCommitID)
             if not os.path.exists(self.output_folder):
                 os.makedirs(self.output_folder)
             cfg_new_path = os.path.join(self.output_folder, 'configFile.txt')
