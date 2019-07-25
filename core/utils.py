@@ -45,6 +45,7 @@ def image_preporcess(image, target_height, target_width, gt_boxes=None):
     scale = min(iw/w, ih/h)
     nw, nh  = int(scale * w), int(scale * h)
     image_resized = cv2.resize(image, (nw, nh))
+    image_cropped = image[:target_height, :target_width]
 
     image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
     dw, dh = (iw - nw) // 2, (ih-nh) // 2
@@ -54,10 +55,24 @@ def image_preporcess(image, target_height, target_width, gt_boxes=None):
     if gt_boxes is None:
         return image_paded
 
-    else:
+    elif cfg.YOLO.IMAGE_HANDLE=='scale':
         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
         return image_paded, gt_boxes
+    elif cfg.YOLO.IMAGE_HANDLE=='crop':
+        gt_boxes_cropped = []
+        for gt in gt_boxes:
+            if (gt[0] >= target_width and gt[2] >= target_width) or (gt[1] >= target_height and gt[2] >= target_height):   # entire box is outside of cropped image
+                continue
+            elif gt[0] < target_width and gt[2] < target_width and gt[3] < target_height and gt[1] < target_height: # entire bbox is included in cropped image
+                gt_boxes_cropped.append(gt)
+            else:
+                if gt[0] >= target_width: gt[0] = target_width - 1
+                if gt[1] >= target_height: gt[1] = target_height - 1
+                if gt[2]>=target_width: gt[2]=target_width-1
+                if gt[3] >= target_height: gt[3] = target_height - 1
+                gt_boxes_cropped.append(gt)
+        return np.array(image_cropped), np.array(gt_boxes_cropped)
 
 
 def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
