@@ -14,7 +14,6 @@ bin-release/
 *.apk
 
 # files to be ignored
-/home/tamar/RecceLite_code_packages/yolo3_baseline2/core/config.py
 
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
