@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 ID = 1
-label_txt = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data.txt"
+label_txt = "./data/recce_data.txt"
 image_info = open(label_txt).readlines()[ID].split()
 
 image_path = image_info[0]

@@ -34,7 +34,11 @@ if args.set_class_iou is not None:
   specific_iou_flagged = True
 
 # if there are no images then no animation can be shown
-img_path = '/home/tamar/DBs/Reccelite/Tagging_1_2_img' #'images'
+home_dir = os.path.expanduser('~')
+if home_dir == '~':
+  home_dir = ''
+# If user or $HOME is unknown, do nothing
+img_path = os.path.join(home_dir, 'DBs/Reccelite/Tagging_1_2_img') #'images'
 if os.path.exists(img_path): 
   for dirpath, dirnames, files in os.walk(img_path):
     if not files:
