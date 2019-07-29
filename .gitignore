@@ -14,6 +14,7 @@ bin-release/
 *.apk
 
 # files to be ignored
+# core/config.py
 
 # ### PyCharm stuff ###
 .idea/

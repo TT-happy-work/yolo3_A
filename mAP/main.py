@@ -806,6 +806,7 @@ with open(results_files_path + "/results.txt", 'a') as results_file:
  Draw mAP plot (Show AP's of all classes in decreasing order)
 """
 if draw_plot:
+  plt.figure()
   window_title = "mAP"
   plot_title = "mAP = {0:.2f}%".format(mAP*100)
   x_label = "Average Precision"

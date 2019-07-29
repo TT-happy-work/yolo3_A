@@ -1,16 +1,4 @@
-#! /usr/bin/env python
-# coding=utf-8
-#================================================================
-#   Copyright (C) 2019 * Ltd. All rights reserved.
-#   File name   : config.py
-#   Author      : Tamar Talmor
-#   Created date: 2019-06-13
-#   Description : Config file for yolov3
-#
-#================================================================
-
 from easydict import EasyDict as edict
-
 
 __C                             = edict()
 # Consumers can get config by: from config import cfg
@@ -21,7 +9,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "recce_dbg_allDB_10iters",
+__C.YOLO.EXP_DIR                = "recce_",
 __C.YOLO.ROOT_DIR               = "../Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -29,10 +17,10 @@ __C.YOLO.MOVING_AVE_DECAY       = 0.9995
 __C.YOLO.STRIDES                = [8, 16, 32]
 __C.YOLO.ANCHOR_PER_SCALE       = 3
 __C.YOLO.IOU_LOSS_THRESH        = 0.5
-__C.YOLO.UPSAMPLE_METHOD        = "resize"
+__C.YOLO.UPSAMPLE_METHOD        = "resize" # interpolation
 __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
-
+__C.YOLO.IMAGE_HANDLE           = 'scale'  # 'crop' or 'scale'
 
 # Train options
 __C.TRAIN                       = edict()
@@ -47,15 +35,15 @@ __C.TRAIN.IMAGE_W               = 1*800 #3296
 __C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
-__C.TRAIN.WARMUP_EPOCHS         = 2
-__C.TRAIN.FISRT_STAGE_EPOCHS    = 3
-__C.TRAIN.SECOND_STAGE_EPOCHS   = 5
+__C.TRAIN.WARMUP_EPOCHS         = 20
+__C.TRAIN.FISRT_STAGE_EPOCHS    = 300
+__C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
+
 
 
 # TEST options
 __C.TEST                        = edict()
-
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=636.9513.ckpt-1299"
+__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=248.6961.ckpt-1300"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*640 #2464
