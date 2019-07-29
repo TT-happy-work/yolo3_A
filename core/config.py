@@ -10,7 +10,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "checking_CROP",
+__C.YOLO.EXP_DIR                = "scale_xindLess0",
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -21,7 +21,7 @@ __C.YOLO.IOU_LOSS_THRESH        = 0.5
 __C.YOLO.UPSAMPLE_METHOD        = "resize" # interpolation
 __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
-__C.YOLO.IMAGE_HANDLE           = 'crop'  # 'crop' or 'scale'
+__C.YOLO.IMAGE_HANDLE           = 'scale'  # 'crop' or 'scale'
 
 # Train options
 __C.TRAIN                       = edict()
