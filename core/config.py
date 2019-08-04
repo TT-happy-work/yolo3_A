@@ -10,7 +10,7 @@ __C.YOLO                        = edict()
 
 # Set the class name
 __C.YOLO.EXP_DIR                = "recce_",
-__C.YOLO.ROOT_DIR               = "../Runs/",
+__C.YOLO.ROOT_DIR               = "./Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
 __C.YOLO.MOVING_AVE_DECAY       = 0.9995
@@ -43,7 +43,7 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 
 # TEST options
 __C.TEST                        = edict()
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=248.6961.ckpt-1300"
+__C.TEST.WEIGHT_FILE            = "/media/nadavkad/d2b11252-1c77-4a8b-9dca-50a67d41e880/reccelight/yolo3_A/Runs/recce__weighted_loss_01Aug19_1546_2031a71/checkpoints/yolov3_epoch=1300_test_loss=243.3877.ckpt-1300"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*640 #2464
