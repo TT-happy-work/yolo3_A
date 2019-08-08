@@ -765,7 +765,7 @@ if draw_plot:
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
     output_path = results_files_path + "/Confidence reliability of " + cls + ".png"
     #fig, ax = plt.subplots()
-    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     print(n_equal_bins)
     opacity = 0.75
     plt.hist(conf_T[cls], n_equal_bins, alpha=opacity, color='g', label='True Predictions')
@@ -788,7 +788,7 @@ if draw_plot:
   # plot FA vs. Confidence
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
     output_path = results_files_path + "/FA vs Confidence of " + cls + ".png"
-    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     plt.figure()
     plt.hist(conf_F[cls], n_equal_bins, alpha=opacity, color='r', label='False Predictions')
     plt.grid(axis='y', alpha=0.75)
