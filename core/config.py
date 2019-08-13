@@ -37,7 +37,7 @@ __C.TRAIN.ANNOT_PATH            = "/home/mayarap/Documents/recc/DB/recce_all_Tag
 __C.TRAIN.BATCH_SIZE            = 1
 __C.TRAIN.IMAGE_H               = 1*640 #2464
 __C.TRAIN.IMAGE_W               = 1*800 #3296
-__C.TRAIN.DATA_AUG              = False
+__C.TRAIN.DATA_AUG              = True
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
 __C.TRAIN.WARMUP_EPOCHS         = 20
@@ -47,7 +47,7 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 
 # TEST options
 __C.TEST                        = edict()
-#mb
+
 ####__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1300_test_loss=nan.ckpt-1300"
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=247.9916.ckpt-1294"
 ####__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"

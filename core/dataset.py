@@ -18,8 +18,9 @@ import numpy as np
 import tensorflow as tf
 import core.utils as utils
 from core.config import cfg
+#import core.config
 
-
+PARAMETER_MAX = 10  # What is the max 'level' a transform could be predicted
 
 class Dataset(object):
     """implement Dataset here"""
@@ -153,6 +154,64 @@ class Dataset(object):
 
         return image, bboxes
 
+    def random_noise(self, image, bboxes):
+        # TensorFlow. 'x' = A placeholder for an image.
+#        if random.random() < 0.5:
+        h, w, channels = image.shape
+        shape = [h, w, channels]
+        ####x = tf.placeholder(dtype=tf.float32, shape=shape)
+        # Adding Gaussian noise
+        ####noise = tf.random_normal(shape=tf.shape(x), mean=0.0, stddev=1.0,
+        ####                         dtype=tf.float32)
+        ####image = tf.add(x, noise)
+        noise = tf.random_normal(shape=tf.shape(image), mean=0.0, stddev=1.0,
+                                 dtype=tf.float32)
+        image = tf.add(image, noise)
+        return image, bboxes
+
+    # def pil_wrap(img):
+    #     """Convert the `img` numpy tensor to a PIL Image."""
+    #     return Image.fromarray(
+    #         np.uint8((img * STDS + MEANS) * 255.0)).convert('RGBA')
+    #
+    # def pil_unwrap(pil_img):
+    #     """Converts the PIL img to a numpy array."""
+    #     pic_array = (np.array(pil_img.getdata()).reshape((32, 32, 4)) / 255.0)
+    #     i1, i2 = np.where(pic_array[:, :, 3] == 0)
+    #     pic_array = (pic_array[:, :, :3] - MEANS) / STDS
+    #     pic_array[i1, i2] = [0, 0, 0]
+    #     return pic_array
+    #
+    # class TransformT(object):
+    #     """Each instance of this class represents a specific transform."""
+    #
+    #     def __init__(self, name, xform_fn):
+    #         self.name = name
+    #         self.xform = xform_fn
+    #
+    #     def pil_transformer(self, probability, level):
+    #         def return_function(im):
+    #             if random.random() < probability:
+    #                 im = self.xform(im, level)
+    #             return im
+    #
+    #         name = self.name + '({:.1f},{})'.format(probability, level)
+    #         return TransformFunction(return_function, name)
+    #
+    #     def do_transform(self, image, level):
+    #         f = self.pil_transformer(PARAMETER_MAX, level)
+    #         return pil_unwrap(f(pil_wrap(image)))
+    #
+    # def _rotate_impl(pil_img, level):
+    #     """Rotates `pil_img` from -30 to 30 degrees depending on `level`."""
+    #     maxval = 30
+    #     degrees = int(level * maxval / PARAMETER_MAX)
+    #     if random.random() > 0.5:
+    #         degrees = -degrees
+    #     return pil_img.rotate(degrees)
+    #
+    # rotate = TransformT('Rotate', _rotate_impl)
+
     def parse_annotation(self, annotation):
 
         line = annotation.split()
@@ -164,8 +223,11 @@ class Dataset(object):
 
         if self.data_aug:
             image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
-            image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
-            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+##            image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
+##            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+
+####            image, bboxes = self.random_noise(np.copy(image), np.copy(bboxes))
+
 
         image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))
         return image, bboxes
