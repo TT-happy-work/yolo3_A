@@ -222,7 +222,7 @@ class Dataset(object):
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
 
         if self.data_aug:
-        ##            image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
+        ##           image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
             image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
 ##            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
 
