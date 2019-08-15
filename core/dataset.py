@@ -223,8 +223,8 @@ class Dataset(object):
 
         if self.data_aug:
         ##           image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
-            image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
-##            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+        ##    image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
+            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
 
 ####            image, bboxes = self.random_noise(np.copy(image), np.copy(bboxes))
 
