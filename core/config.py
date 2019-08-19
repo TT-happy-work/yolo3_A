@@ -1,6 +1,5 @@
 from easydict import EasyDict as edict
 
-
 __C                             = edict()
 # Consumers can get config by: from config import cfg
 
@@ -10,8 +9,8 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "compareRects_square800",
-__C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
+__C.YOLO.EXP_DIR                = "recce_",
+__C.YOLO.ROOT_DIR               = "../Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
 __C.YOLO.MOVING_AVE_DECAY       = 0.9995
@@ -41,10 +40,10 @@ __C.TRAIN.FISRT_STAGE_EPOCHS    = 300
 __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 
 
+
 # TEST options
 __C.TEST                        = edict()
-
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=69_test_loss=82.6984.ckpt-69"
+__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=248.6961.ckpt-1300"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*800 #2464
