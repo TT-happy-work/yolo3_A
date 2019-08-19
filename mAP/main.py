@@ -205,7 +205,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       fp_sorted.append(dictionary[key] - true_p_bar[key])
       tp_sorted.append(true_p_bar[key])
       gt_sorted.append(gt_counter_per_class[key])
-    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='True Predictions')
+    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='Ground Truth')
     plt.barh(range(n_classes), list(np.array(gt_sorted)-np.array(tp_sorted)), align='center', color='orange', label='Mis-Detections', left=gt_sorted)
     plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=list(2*np.array(gt_sorted)-np.array(tp_sorted)))
     # add legend

@@ -30,7 +30,7 @@ __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TRAIN.BATCH_SIZE            = 1
-__C.TRAIN.IMAGE_H               = 1*640 #2464
+__C.TRAIN.IMAGE_H               = 1*800 #2464
 __C.TRAIN.IMAGE_W               = 1*800 #3296
 __C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
@@ -46,7 +46,7 @@ __C.TEST                        = edict()
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=248.6961.ckpt-1300"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
-__C.TEST.IMAGE_H                = 1*640 #2464
+__C.TEST.IMAGE_H                = 1*800 #2464
 __C.TEST.IMAGE_W                = 1*800 #3296
 __C.TEST.DATA_AUG               = False
 __C.TEST.WRITE_IMAGE            = True
