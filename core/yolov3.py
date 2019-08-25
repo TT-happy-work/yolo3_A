@@ -31,6 +31,8 @@ class YOLOV3(object):
         self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
         self.iou_loss_thresh  = cfg.YOLO.IOU_LOSS_THRESH
         self.upsample_method  = cfg.YOLO.UPSAMPLE_METHOD
+        self.weighted_loss    = cfg.TRAIN.WEIGHTED_LOSS
+        self.class_weights    = tf.cast(tf.constant(cfg.TRAIN.WEIGHTED_LOSS_MAP), tf.float32)
 
         try:
             self.conv_lbbox, self.conv_mbbox, self.conv_sbbox = self.__build_nework(input_data)
@@ -226,11 +228,12 @@ class YOLOV3(object):
                 respond_bgd * tf.nn.sigmoid_cross_entropy_with_logits(labels=respond_bbox, logits=conv_raw_conf)
         )
 
-        # nadav - weighted_loss
-        class_weight = tf.constant([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-        class_weight = tf.cast(class_weight, tf.float32)
+        # weighted_loss
+        if self.weighted_loss:
+            prob_loss = respond_bbox * tf.nn.sigmoid_cross_entropy_with_logits(labels=label_prob, logits=conv_raw_prob) * self.class_weights
+        else:
+            prob_loss = respond_bbox * tf.nn.sigmoid_cross_entropy_with_logits(labels=label_prob, logits=conv_raw_prob)
 
-        prob_loss = respond_bbox * tf.nn.sigmoid_cross_entropy_with_logits(labels=label_prob, logits=conv_raw_prob) * class_weight
 
         giou_loss = tf.reduce_mean(tf.reduce_sum(giou_loss, axis=[1,2,3,4]))
         conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[1,2,3,4]))

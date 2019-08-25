@@ -38,6 +38,9 @@ __C.TRAIN.LEARN_RATE_END        = 1e-6
 __C.TRAIN.WARMUP_EPOCHS         = 20
 __C.TRAIN.FISRT_STAGE_EPOCHS    = 300
 __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
+__C.TRAIN.WEIGHTED_LOSS         = True
+__C.TRAIN.WEIGHTED_LOSS_MAP     = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  # weight vector with length=number_of_classes
 
 
 
