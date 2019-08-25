@@ -215,7 +215,6 @@ def find_bbox_with_max_IOU(src_bbox, dst_bbox_list):
         maxIOU_bbox = dst_bbox
 
   return maxIOU_bbox, maxIOU
-# nadav - wp
 
 
 """
@@ -561,6 +560,8 @@ FA = dict(template_class_dict)  # False Alarm predictions per class   (no gt obj
 predictions_occurrences = dict(template_class_dict)
 gt_occurrences = dict(template_class_dict)
 miss_detections = dict(template_class_dict)
+
+
 confusion_matrix = dict(template_class_dict)
 for class_name in confusion_matrix:
   confusion_matrix[class_name] = dict(template_class_dict)
@@ -574,13 +575,13 @@ for class_name in confusion_matrix:
 for frameID in predictions_data:
   possible_gt_bbox_list = gt_data[frameID]
   for bbox_pred in predictions_data[frameID]:
-    predictions_occurrences[bbox_pred['class_name']] = predictions_occurrences[bbox_pred['class_name']] + 1
+    predictions_occurrences[bbox_pred['class_name']] += 1
     maxIOU_gt_bbox, IOU = find_bbox_with_max_IOU(bbox_pred, possible_gt_bbox_list)
     if IOU < MINOVERLAP:  # if IOU smaller than threshold the prediction is a FA
-      FA[bbox_pred['class_name']] = FA[bbox_pred['class_name']] + 1
+      FA[bbox_pred['class_name']] += 1
     elif bbox_pred['class_name'] == maxIOU_gt_bbox['class_name']:
       # if IOU larger than threshold and correct class is predicted than it's TP
-      TP[bbox_pred['class_name']] = TP[bbox_pred['class_name']] + 1
+      TP[bbox_pred['class_name']] += 1
 
 
 # iterate over the ground truth, for each gt bbox:
@@ -589,12 +590,12 @@ for frameID in predictions_data:
 for frameID in gt_data:
   possible_pred_bbox_list = predictions_data[frameID]
   for bbox_gt in gt_data[frameID]:
-    gt_occurrences[bbox_gt['class_name']] = gt_occurrences[bbox_gt['class_name']] + 1
+    gt_occurrences[bbox_gt['class_name']] += 1
     maxIOU_pred_bbox, IOU = find_bbox_with_max_IOU(bbox_gt, possible_pred_bbox_list)
     if IOU < MINOVERLAP:  # if IOU smaller than threshold the prediction is a False Alarm
-      miss_detections[bbox_gt['class_name']] = miss_detections[bbox_gt['class_name']] + 1
+      miss_detections[bbox_gt['class_name']] += 1
     else:
-      confusion_matrix[bbox_gt['class_name']][maxIOU_pred_bbox['class_name']] = confusion_matrix[bbox_gt['class_name']][maxIOU_pred_bbox['class_name']] + 1.0
+      confusion_matrix[bbox_gt['class_name']][maxIOU_pred_bbox['class_name']] += 1.0
 
 # normalize confusion matrix to [0,1] (per gt class)
 for gt_class_name in confusion_matrix:
