@@ -10,7 +10,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "scale_640x800_withOUTind",
+__C.YOLO.EXP_DIR                = "scale_640x800_withSwitchedInd",
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -43,7 +43,7 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 # TEST options
 __C.TEST                        = edict()
 
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1000_test_loss=809.0425.ckpt-1000"
+__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1000_test_loss=802.1226.ckpt-1000"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*640 #2464
