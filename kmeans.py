@@ -88,12 +88,34 @@ def parse_anno(annotation_path):
         s = s[1:]
         box_cnt = len(s) // 5
         for i in range(box_cnt):
-            x_min, y_min, x_max, y_max = float(s[i*5+0]), float(s[i*5+1]), float(s[i*5+2]), float(s[i*5+3])
+            ss = s[i].split(',')
+            x_min, y_min, x_max, y_max = float(ss[0]), float(ss[1]), float(ss[2]), float(ss[3])
             width  = (x_max - x_min) / image_w
             height = (y_max - y_min) / image_h
             result.append([width, height])
     result = np.asarray(result)
     return result
+
+
+
+# def parse_anno(annotation_path):
+#     anno = open(annotation_path, 'r')
+#     result = []
+#     for line in anno:
+#         s = line.strip().split(' ')
+#         image = cv2.imread(s[0])
+#         image_h, image_w = image.shape[:2]
+#         s = s[1:]
+#         box_cnt = len(s) // 5
+#         for i in range(box_cnt):
+#             ss=s[i].split(',')
+#
+#             x_min, y_min, x_max, y_max = float(ss[0]), float(ss[1]), float(ss[2]), float(ss[3])
+#             width  = (x_max - x_min) / image_w
+#             height = (y_max - y_min) / image_h
+#             result.append([width, height])
+#     result = np.asarray(result)
+#     return result
 
 
 def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
@@ -118,8 +140,8 @@ def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_txt", type=str, default="./raccoon_dataset/train.txt")
-    parser.add_argument("--anchors_txt", type=str, default="./data/raccoon_anchors.txt")
+    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/dataset/recce_all_Tagging_1_2_img.txt")
+    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reconst_recce_anchors_1.txt")
     parser.add_argument("--cluster_num", type=int, default=9)
     args = parser.parse_args()
     anno_result = parse_anno(args.dataset_txt)
@@ -136,6 +158,7 @@ if __name__ == '__main__':
 
     WithinClusterMeanDist = np.mean(distances[np.arange(distances.shape[0]),nearest_clusters])
     plot_cluster_result(clusters, nearest_clusters, 1-WithinClusterMeanDist, anno_result, args.cluster_num)
+    a=1
 
 
 

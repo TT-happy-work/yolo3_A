@@ -10,7 +10,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "scale_640x800_withSwitchedInd",
+__C.YOLO.EXP_DIR                = "crop_896x960_Tagging123_anchorsFactoredByStride",
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -21,17 +21,17 @@ __C.YOLO.IOU_LOSS_THRESH        = 0.5
 __C.YOLO.UPSAMPLE_METHOD        = "resize" # interpolation
 __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
-__C.YOLO.IMAGE_HANDLE           = 'scale'  # 'crop' or 'scale'
+__C.YOLO.IMAGE_HANDLE           = 'crop'  # 'crop' or 'scale'
 
 # Train options
 __C.TRAIN                       = edict()
 
 __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
-__C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_img.txt"
+__C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_3_img.txt"
 __C.TRAIN.BATCH_SIZE            = 1
-__C.TRAIN.IMAGE_H               = 1*640 #2464
-__C.TRAIN.IMAGE_W               = 1*800 #3296
+__C.TRAIN.IMAGE_H               = 896 #1*640#2464
+__C.TRAIN.IMAGE_W               = 960 #1*800#3296
 __C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
@@ -43,11 +43,11 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 # TEST options
 __C.TEST                        = edict()
 
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1000_test_loss=802.1226.ckpt-1000"
-__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
+__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1000_test_loss=63.1077.ckpt-1000"
+__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_3_img.txt"
 __C.TEST.BATCH_SIZE             = 2
-__C.TEST.IMAGE_H                = 1*640 #2464
-__C.TEST.IMAGE_W                = 1*800 #3296
+__C.TEST.IMAGE_H                = 896 #1*640#2464
+__C.TEST.IMAGE_W                = 960 #1*800#3296
 __C.TEST.DATA_AUG               = False
 __C.TEST.WRITE_IMAGE            = True
 __C.TEST.WRITE_IMAGE_PATH       = "./data/detection/"

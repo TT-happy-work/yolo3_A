@@ -77,7 +77,7 @@ def image_preporcess(image, target_height, target_width, gt_boxes=None):
 
     '''
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-
+    cropTH = 0.6
     # im = image
     # plt.figure(); plt.imshow(image/255); plt.title('full org'); plt.show()
     # ih, iw    = target_height, target_width
@@ -94,34 +94,41 @@ def image_preporcess(image, target_height, target_width, gt_boxes=None):
 
     ih, iw = target_height, target_width
     h, w, _ = image.shape
-    image_resized = cv2.resize(image / 255, (target_width, target_height))
+    image_scaled = cv2.resize(image / 255, (target_width, target_height))
     image_cropped = image[:target_height, :target_width] / 255
 
+    #draw_gt_bbox(image, gt_boxes)
     if gt_boxes is None:
         if cfg.YOLO.IMAGE_HANDLE=='scale':
-            return image_resized
+            return image_scaled
         elif cfg.YOLO.IMAGE_HANDLE=='crop':
             return image_cropped
         else:
             return image_cropped
     elif cfg.YOLO.IMAGE_HANDLE=='scale':
-        gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * iw/w
-        gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * ih/h
-        return image_resized, gt_boxes
+        gt_boxes_scaled = np.zeros_like(gt_boxes)
+        gt_boxes_scaled[:, [0, 2]] = gt_boxes[:, [0, 2]] * iw/w
+        gt_boxes_scaled[:, [1, 3]] = gt_boxes[:, [1, 3]] * ih/h
+        gt_boxes_scaled[:, -1] = gt_boxes[:, -1]
+        #draw_gt_bbox(image_scaled*255, gt_boxes_scaled)
+        return image_scaled, gt_boxes_scaled
     elif cfg.YOLO.IMAGE_HANDLE=='crop':
         gt_boxes_cropped = []
         for gt in gt_boxes:
             if (gt[0] >= target_width and gt[2] >= target_width) or (gt[1] >= target_height and gt[3] >= target_height):   # entire box is outside of cropped image
                 continue
-            elif gt[0] < target_width and gt[2] < target_width and gt[3] < target_height and gt[1] < target_height: # entire bbox is included in cropped image
+            elif gt[0] < target_width and gt[2] < target_width and gt[3] < target_height and gt[1] < target_height:        # entire bbox is included in cropped image
                 gt_boxes_cropped.append(gt)
+            elif (gt[0] < target_width and gt[2] >= target_width and (target_width-gt[0])/(gt[2]-gt[0])< cropTH) or (gt[1] < target_height and gt[3] >= target_height and (target_height-gt[1])/(gt[3]-gt[1])< cropTH): # if only a small portion of target is in the frame then ignore it
+                continue
             else:
                 if gt[0] >= target_width:  gt[0] = target_width - 1
                 if gt[1] >= target_height: gt[1] = target_height - 1
                 if gt[2] >= target_width:  gt[2] = target_width-1
                 if gt[3] >= target_height: gt[3] = target_height - 1
                 gt_boxes_cropped.append(gt)
-        return np.array(image_cropped), np.array(gt_boxes_cropped)
+        #draw_gt_bbox(image_cropped*255, gt_boxes_cropped)
+        return image_cropped, np.array(gt_boxes_cropped)
 
 
 def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
@@ -161,6 +168,47 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
 
     return image
 
+
+def draw_gt_bbox(image, gt_boxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
+    """
+    bboxes: [x_min, y_min, x_max, y_max, cls_id] format coordinates.
+    """
+
+    from PIL import Image
+    num_classes = len(classes)
+    image_h, image_w, _ = image.shape
+    hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+
+    random.seed(0)
+    random.shuffle(colors)
+    # random.seed(None)
+
+    # print('len(bboxes) = ', len(bboxes))
+    plt.figure()
+    if gt_boxes==[]: return
+    for i, bbox in enumerate(gt_boxes):
+        coor = np.array(bbox[:4], dtype=np.int32)
+        fontScale = 0.5
+        class_ind = int(bbox[4])
+        # print('class_ind = ', class_ind)
+        bbox_color = colors[class_ind]
+        bbox_thick = int(0.6 * (image_h + image_w) / 600)
+        c1, c2 = (coor[0], coor[1]), (coor[2], coor[3])
+        img = cv2.rectangle(image, c1, c2, bbox_color, bbox_thick)
+
+        bbox_mess = '%s' % (classes[class_ind])
+        t_size = cv2.getTextSize(bbox_mess, 0, fontScale, thickness=bbox_thick // 2)[0]
+        cv2.rectangle(img, c1, (c1[0] + t_size[0], c1[1] - t_size[1] - 3), bbox_color, -1)  # filled
+
+        cv2.putText(img, bbox_mess, (c1[0], c1[1] - 2), cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
+
+    image_box = Image.fromarray(np.uint8(img))
+    image_box.show()
+
+    return
 
 
 def bboxes_iou(boxes1, boxes2):

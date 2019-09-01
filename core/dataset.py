@@ -42,6 +42,7 @@ class Dataset(object):
         self.num_samples = len(self.annotations)
         self.num_batchs = int(np.ceil(self.num_samples / self.batch_size))
         self.batch_count = 0
+        self.image_handle = cfg.YOLO.IMAGE_HANDLE
 
 
     def load_annotations(self, dataset_type):
@@ -81,8 +82,8 @@ class Dataset(object):
                     index = self.batch_count * self.batch_size + num
                     if index >= self.num_samples: index -= self.num_samples
                     annotation = self.annotations[index]
-                    image, bboxes = self.parse_annotation(annotation)
-                    label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes)
+                    image, bboxes, orig_shape = self.parse_annotation(annotation)
+                    label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes, orig_shape)
 
                     batch_image[num, :, :, :] = image
                     batch_label_sbbox[num, :, :, :, :] = label_sbbox
@@ -162,6 +163,7 @@ class Dataset(object):
             raise KeyError("%s does not exist ... " %image_path)
         image = np.array(cv2.imread(image_path))
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
+        orig_image_shape = image.shape
 
         if self.data_aug:
             image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
@@ -169,7 +171,7 @@ class Dataset(object):
             image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
 
         image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))
-        return image, bboxes
+        return image, bboxes, orig_image_shape
 
     def bbox_iou(self, boxes1, boxes2):
 
@@ -193,7 +195,7 @@ class Dataset(object):
 
         return inter_area / union_area
 
-    def preprocess_true_boxes(self, bboxes):
+    def preprocess_true_boxes(self, bboxes, image_shape):
 
         label = [np.zeros((self.train_output_sizes_h[i], self.train_output_sizes_w[i], self.anchor_per_scale,
                            5 + self.num_classes)) for i in range(3)]
@@ -215,10 +217,16 @@ class Dataset(object):
 
             iou = []
             exist_positive = False
+            ratio_h = image_shape[0]/self.input_height
+            ratio_w = image_shape[1]/self.input_width
             for i in range(3):
                 anchors_xywh = np.zeros((self.anchor_per_scale, 4))
                 anchors_xywh[:, 0:2] = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32) + 0.5
-                anchors_xywh[:, 2:4] = self.anchors[i]
+                if self.image_handle == 'scale':
+                    anchors_xywh[:, 2:4] = self.anchors[i]
+                elif self.image_handle == 'crop':
+                    anchors_xywh[:, 2] = self.anchors[i][:, 0] / ratio_w
+                    anchors_xywh[:, 3] = self.anchors[i][:, 1] / ratio_h
 
                 iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)
                 iou.append(iou_scale)
@@ -276,7 +284,3 @@ class Dataset(object):
 
     def __len__(self):
         return self.num_batchs
-
-
-
-
