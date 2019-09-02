@@ -10,7 +10,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "crop_896x960_Tagging123_anchorsFactoredByStride",
+__C.YOLO.EXP_DIR                = "crop_896x960_Tagging123_NoAnchorsFactoredByStride",
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"

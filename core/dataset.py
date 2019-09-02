@@ -225,8 +225,9 @@ class Dataset(object):
                 if self.image_handle == 'scale':
                     anchors_xywh[:, 2:4] = self.anchors[i]
                 elif self.image_handle == 'crop':
-                    anchors_xywh[:, 2] = self.anchors[i][:, 0] / ratio_w
-                    anchors_xywh[:, 3] = self.anchors[i][:, 1] / ratio_h
+                    anchors_xywh[:, 2:4] = self.anchors[i]
+                    # anchors_xywh[:, 2] = self.anchors[i][:, 0] / ratio_w
+                    # anchors_xywh[:, 3] = self.anchors[i][:, 1] / ratio_h
 
                 iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)
                 iou.append(iou_scale)
