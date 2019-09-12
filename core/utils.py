@@ -300,8 +300,11 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_h, input_w, score_threshol
     dw = (input_w - resize_ratio * org_w) / 2
     dh = (input_h - resize_ratio * org_h) / 2
 
-    pred_coor[:, 0::2] = 1.0 * (pred_coor[:, 0::2]) * org_w / input_w
-    pred_coor[:, 1::2] = 1.0 * (pred_coor[:, 1::2]) * org_h / input_h
+    if cfg.YOLO.IMAGE_HANDLE == 'scale':
+        pred_coor[:, 0::2] = 1.0 * (pred_coor[:, 0::2]) * org_w / input_w
+        pred_coor[:, 1::2] = 1.0 * (pred_coor[:, 1::2]) * org_h / input_h
+    elif cfg.YOLO.IMAGE_HANDLE == 'crop':
+        pass
 
     # # (3) clip some boxes those are out of range
     pred_coor = np.concatenate([np.maximum(pred_coor[:, :2], [0, 0]),
