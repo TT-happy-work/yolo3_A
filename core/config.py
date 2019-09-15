@@ -11,8 +11,7 @@ __C.YOLO                        = edict()
 
 # Set the class name
 __C.YOLO.EXP_DIR                = "recce_overfitAllDB_20-1000-300Iters",
-####__C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
-__C.YOLO.ROOT_DIR               = "/home/mayarap/Reccelite/yolo3_baseline2/Runs/",
+__C.YOLO.ROOT_DIR               = "./Runs/",
 ####__C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.CLASSES                = "/home/mayarap/Documents/recc/recce.names"
 ####__C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -32,8 +31,7 @@ __C.TRAIN                       = edict()
 __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 #__C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_test_loss=14.7788.ckpt-2"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
-####__C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_img.txt"
-__C.TRAIN.ANNOT_PATH            = "/home/mayarap/Documents/recc/DB/recce_all_Tagging_1_2_img.txt"
+__C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_img_maya.txt"
 __C.TRAIN.BATCH_SIZE            = 1
 __C.TRAIN.IMAGE_H               = 1*640 #2464
 __C.TRAIN.IMAGE_W               = 1*800 #3296
@@ -51,8 +49,7 @@ __C.TEST                        = edict()
 
 ####__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1300_test_loss=nan.ckpt-1300"
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=247.9916.ckpt-1294"
-####__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
-__C.TEST.ANNOT_PATH             = "/home/mayarap/Documents/recc/DB/recce_all_Tagging_1_2_img.txt"
+__C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img_maya.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*640 #2464
 __C.TEST.IMAGE_W                = 1*800 #3296
