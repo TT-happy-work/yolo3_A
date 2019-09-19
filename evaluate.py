@@ -112,9 +112,10 @@ class YoloTest(object):
                 print('=> predict result of %s:' % image_name)
                 predict_result_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '.txt')
                 bboxes_pr = self.predict(image)
+                image, _ = utils.image_preporcess(image, self.target_height, self.target_width, bboxes_pr)
 
                 if self.write_image:
-                    image = utils.draw_bbox(image, bboxes_pr, show_label=self.show_label)
+                    image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
                     cv2.imwrite(self.write_image_path+image_name, image)
 
                 with open(predict_result_path, 'w') as f:
