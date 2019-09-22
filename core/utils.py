@@ -27,6 +27,13 @@ def read_class_names(class_file_name):
             names[ID] = name.strip('\n')
     return names
 
+def read_conf_th(conf_th_file_name):
+    '''loads class name from a file'''
+    names = {}
+    with open(conf_th_file_name, 'r') as data:
+        for name in data:
+            names[name.split(',')[0]] = float(name.split(',')[1].split('\n')[0])
+    return names
 
 def get_anchors(anchors_path):
     '''loads the anchors from a file'''

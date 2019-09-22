@@ -22,20 +22,22 @@ from core.yolov3 import YOLOV3
 
 class YoloTest(object):
     def __init__(self):
-        self.target_height    =  cfg.TEST.IMAGE_H
-        self.target_width     = cfg.TEST.IMAGE_W
-        self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
-        self.classes          = utils.read_class_names(cfg.YOLO.CLASSES)
-        self.num_classes      = len(self.classes)
-        self.anchors          = np.array(utils.get_anchors(cfg.YOLO.ANCHORS))
-        self.score_threshold  = cfg.TEST.SCORE_THRESHOLD
-        self.iou_threshold    = cfg.TEST.IOU_THRESHOLD
-        self.moving_ave_decay = cfg.YOLO.MOVING_AVE_DECAY
-        self.annotation_path  = cfg.TEST.ANNOT_PATH
-        self.weight_file      = cfg.TEST.WEIGHT_FILE
-        self.write_image      = cfg.TEST.WRITE_IMAGE
-        self.write_image_path = cfg.TEST.WRITE_IMAGE_PATH
-        self.show_label       = cfg.TEST.SHOW_LABEL
+        self.target_height     =  cfg.TEST.IMAGE_H
+        self.target_width      = cfg.TEST.IMAGE_W
+        self.anchor_per_scale  = cfg.YOLO.ANCHOR_PER_SCALE
+        self.classes           = utils.read_class_names(cfg.YOLO.CLASSES)
+        self.num_classes       = len(self.classes)
+        self.anchors           = np.array(utils.get_anchors(cfg.YOLO.ANCHORS))
+        self.score_threshold   = cfg.TEST.SCORE_THRESHOLD
+        self.iou_threshold     = cfg.TEST.IOU_THRESHOLD
+        self.moving_ave_decay  = cfg.YOLO.MOVING_AVE_DECAY
+        self.annotation_path   = cfg.TEST.ANNOT_PATH
+        self.weight_file       = cfg.TEST.WEIGHT_FILE
+        self.write_image       = cfg.TEST.WRITE_IMAGE
+        self.write_image_path  = cfg.TEST.WRITE_IMAGE_PATH
+        self.show_label        = cfg.TEST.SHOW_LABEL
+        self.epilog_logics     = cfg.YOLO.EPILOG_LOGICS
+        self.specifc_conf_file = cfg.YOLO.CONF_TH_FILE
 
         with tf.name_scope('input'):
             self.input_data = tf.placeholder(dtype=tf.float32, name='input_data')
@@ -113,6 +115,16 @@ class YoloTest(object):
                 predict_result_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '.txt')
                 bboxes_pr = self.predict(image)
                 image, _ = utils.image_preporcess(image, self.target_height, self.target_width, bboxes_pr)
+
+                if self.epilog_logics:
+                    specifc_conf = utils.read_conf_th(self.specifc_conf_file)
+                    for box_ind in range(len(bboxes_pr)):
+                        box_clss = bboxes_pr[box_ind, 0]
+                        box_conf = bboxes_pr[box_ind, 1]
+                        if box_conf < specifc_conf[box_clss]:
+                            np.delete(bboxes_pr, box_ind, axis=0)
+                    #TODO: overlap btw boxes
+
 
                 if self.write_image:
                     image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
