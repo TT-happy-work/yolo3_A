@@ -495,6 +495,7 @@ if specific_iou_flagged:
 # get a list with the predicted files
 predicted_files_list = glob.glob('predicted/*.txt')
 predicted_files_list.sort()
+pred_counter_per_class = {}
 
 for txt_file in predicted_files_list:
   #print(txt_file)
@@ -521,10 +522,18 @@ for txt_file in predicted_files_list:
     bbox = left + " " + top + " " + right + " " +bottom
     bounding_boxes.append({"confidence": confidence, "class_name":class_name, "bbox": bbox})
 
+    if class_name in pred_counter_per_class:
+      pred_counter_per_class[class_name] += 1
+    else:
+      # if class didn't exist yet
+      pred_counter_per_class[class_name] = 1
+
+
   # dump bounding_boxes into a ".json" file
   with open(tmp_files_path + "/" + file_id + "_predictions.json", 'w') as outfile:
     json.dump(bounding_boxes, outfile)
 
+pred_classes = list(pred_counter_per_class.keys())
 
 
 
@@ -550,11 +559,11 @@ for frameFile in os.listdir(tmp_files_path):
 
 
 # lists of zeros length of num_class
+classes = list(set().union(pred_classes, gt_classes))
 template_class_dict = {}
-for gt_class in gt_classes:
-  template_class_dict[gt_class] = 0
+for cls in classes:
+  template_class_dict[cls] = 0
 
-a = 1
 TP = dict(template_class_dict)  # True positive predictions per class (correct class predicted)
 FA = dict(template_class_dict)  # False Alarm predictions per class   (no gt object with IOU higher than threshold)
 predictions_occurrences = dict(template_class_dict)

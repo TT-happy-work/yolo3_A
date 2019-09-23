@@ -33,6 +33,8 @@ class YOLOV3(object):
         self.upsample_method  = cfg.YOLO.UPSAMPLE_METHOD
         self.weighted_loss    = cfg.TRAIN.WEIGHTED_LOSS
         self.class_weights    = tf.cast(tf.constant(cfg.TRAIN.WEIGHTED_LOSS_MAP), tf.float32)
+        self.data_format      = cfg.YOLO.DATA_FORMAT
+
 
         try:
             self.conv_lbbox, self.conv_mbbox, self.conv_sbbox = self.__build_nework(input_data)
@@ -48,53 +50,79 @@ class YOLOV3(object):
         with tf.variable_scope('pred_lbbox'):
             self.pred_lbbox = self.decode(self.conv_lbbox, self.anchors[2], self.strides[2])
 
+
+
     def __build_nework(self, input_data):
 
-        route_1, route_2, input_data = backbone.darknet53(input_data, self.trainable)
+        route_1, route_2, input_data = backbone.darknet53(input_data, self.trainable, self.data_format)
 
-        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv52')
-        input_data = common.convolutional(input_data, (3, 3,  512, 1024), self.trainable, 'conv53')
-        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv54')
-        input_data = common.convolutional(input_data, (3, 3,  512, 1024), self.trainable, 'conv55')
-        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv56')
+        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv52', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3,  512, 1024), self.trainable, 'conv53', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv54', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3,  512, 1024), self.trainable, 'conv55', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 1024,  512), self.trainable, 'conv56', data_format=self.data_format)
 
-        conv_lobj_branch = common.convolutional(input_data, (3, 3, 512, 1024), self.trainable, name='conv_lobj_branch')
+        conv_lobj_branch = common.convolutional(input_data, (3, 3, 512, 1024), self.trainable, name='conv_lobj_branch',
+                                                data_format=self.data_format)
         conv_lbbox = common.convolutional(conv_lobj_branch, (1, 1, 1024, 3*(self.num_class + 5)),
-                                          trainable=self.trainable, name='conv_lbbox', activate=False, bn=False)
+                                          trainable=self.trainable, name='conv_lbbox', activate=False,
+                                          bn=False, data_format=self.data_format)
 
-        input_data = common.convolutional(input_data, (1, 1,  512,  256), self.trainable, 'conv57')
-        input_data = common.upsample(input_data, name='upsample0', method=self.upsample_method)
+        input_data = common.convolutional(input_data, (1, 1,  512,  256), self.trainable, 'conv57',
+                                          data_format=self.data_format)
+        input_data = common.upsample(input_data, name='upsample0', method=self.upsample_method,
+                                     data_format=self.data_format)
 
-        with tf.variable_scope('route_1'):
-            input_data = tf.concat([input_data, route_2], axis=-1)
+        # NCHW
+        if self.data_format == "NCHW":
+            with tf.variable_scope('route_1'):
+                input_data = tf.concat([input_data, route_2], axis=1)
+        else:
+            with tf.variable_scope('route_1'):
+                input_data = tf.concat([input_data, route_2], axis=-1)
 
-        input_data = common.convolutional(input_data, (1, 1, 768, 256), self.trainable, 'conv58')
-        input_data = common.convolutional(input_data, (3, 3, 256, 512), self.trainable, 'conv59')
-        input_data = common.convolutional(input_data, (1, 1, 512, 256), self.trainable, 'conv60')
-        input_data = common.convolutional(input_data, (3, 3, 256, 512), self.trainable, 'conv61')
-        input_data = common.convolutional(input_data, (1, 1, 512, 256), self.trainable, 'conv62')
 
-        conv_mobj_branch = common.convolutional(input_data, (3, 3, 256, 512),  self.trainable, name='conv_mobj_branch' )
+        input_data = common.convolutional(input_data, (1, 1, 768, 256), self.trainable, 'conv58', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3, 256, 512), self.trainable, 'conv59', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 512, 256), self.trainable, 'conv60', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3, 256, 512), self.trainable, 'conv61', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 512, 256), self.trainable, 'conv62', data_format=self.data_format)
+
+        conv_mobj_branch = common.convolutional(input_data, (3, 3, 256, 512),  self.trainable, name='conv_mobj_branch',
+                                                data_format=self.data_format)
         conv_mbbox = common.convolutional(conv_mobj_branch, (1, 1, 512, 3*(self.num_class + 5)),
-                                          trainable=self.trainable, name='conv_mbbox', activate=False, bn=False)
+                                          trainable=self.trainable, name='conv_mbbox', activate=False, bn=False,
+                                          data_format=self.data_format)
 
-        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv63')
-        input_data = common.upsample(input_data, name='upsample1', method=self.upsample_method)
+        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv63', data_format=self.data_format)
+        input_data = common.upsample(input_data, name='upsample1', method=self.upsample_method, data_format=self.data_format)
 
-        with tf.variable_scope('route_2'):
-            input_data = tf.concat([input_data, route_1], axis=-1)
+        # NCHW
+        if self.data_format == "NCHW":
+            with tf.variable_scope('route_2'):
+                input_data = tf.concat([input_data, route_1], axis=1)
+        else:
+            with tf.variable_scope('route_2'):
+                input_data = tf.concat([input_data, route_1], axis=-1)
 
-        input_data = common.convolutional(input_data, (1, 1, 384, 128), self.trainable, 'conv64')
-        input_data = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, 'conv65')
-        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv66')
-        input_data = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, 'conv67')
-        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv68')
+        input_data = common.convolutional(input_data, (1, 1, 384, 128), self.trainable, 'conv64', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, 'conv65', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv66', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, 'conv67', data_format=self.data_format)
+        input_data = common.convolutional(input_data, (1, 1, 256, 128), self.trainable, 'conv68', data_format=self.data_format)
 
-        conv_sobj_branch = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, name='conv_sobj_branch')
+        conv_sobj_branch = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, name='conv_sobj_branch',
+                                                data_format=self.data_format)
         conv_sbbox = common.convolutional(conv_sobj_branch, (1, 1, 256, 3*(self.num_class + 5)),
-                                          trainable=self.trainable, name='conv_sbbox', activate=False, bn=False)
+                                          trainable=self.trainable, name='conv_sbbox', activate=False, bn=False,
+                                          data_format=self.data_format)
 
-        return conv_lbbox, conv_mbbox, conv_sbbox
+        # if the net is built as NCHW change conv_outputs back to NHWC for compatibility
+        if self.data_format == "NCHW":
+            return tf.transpose(conv_lbbox, perm=[0,2,3,1]), tf.transpose(conv_mbbox, perm=[0,2,3,1]), \
+                   tf.transpose(conv_sbbox, perm=[0,2,3,1])
+        else:
+            return conv_lbbox, conv_mbbox, conv_sbbox
 
     def decode(self, conv_output, anchors, stride):
         """
@@ -132,6 +160,8 @@ class YOLOV3(object):
         pred_prob = tf.sigmoid(conv_raw_prob)
 
         return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
+
+
 
     def focal(self, target, actual, alpha=1, gamma=2):
         focal_loss = alpha * tf.pow(tf.abs(target - actual), gamma)

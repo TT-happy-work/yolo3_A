@@ -21,6 +21,7 @@ __C.YOLO.UPSAMPLE_METHOD        = "resize" # interpolation
 __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.YOLO.IMAGE_HANDLE           = 'scale'  # 'crop' or 'scale'
+__C.YOLO.DATA_FORMAT            = 'NCHW'  # 'NCHW' or 'NHWC' (N-batch size, C-channels, H-height, W-width)
 
 # Train options
 __C.TRAIN                       = edict()
@@ -30,8 +31,8 @@ __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TRAIN.BATCH_SIZE            = 1
-__C.TRAIN.IMAGE_H               = 1*640 #2464
-__C.TRAIN.IMAGE_W               = 1*800 #3296
+__C.TRAIN.IMAGE_H               = 1*640 #320 #2464
+__C.TRAIN.IMAGE_W               = 1*800 #416 #3296
 __C.TRAIN.DATA_AUG              = False
 __C.TRAIN.LEARN_RATE_INIT       = 1e-4
 __C.TRAIN.LEARN_RATE_END        = 1e-6
@@ -41,6 +42,8 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 __C.TRAIN.WEIGHTED_LOSS         = True
 __C.TRAIN.WEIGHTED_LOSS_MAP     = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  # weight vector with length=number_of_classes
+__C.TRAIN.PRUNING_EPOCH_FREQ    = 100
+
 
 
 
