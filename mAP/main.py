@@ -205,7 +205,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       fp_sorted.append(dictionary[key] - true_p_bar[key])
       tp_sorted.append(true_p_bar[key])
       gt_sorted.append(gt_counter_per_class[key])
-    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='True Predictions')
+    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='Ground Truth')
     plt.barh(range(n_classes), list(np.array(gt_sorted)-np.array(tp_sorted)), align='center', color='orange', label='Mis-Detections', left=gt_sorted)
     plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=list(2*np.array(gt_sorted)-np.array(tp_sorted)))
     # add legend
@@ -769,7 +769,7 @@ if draw_plot:
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
     output_path = results_files_path + "/Confidence reliability of " + cls + ".png"
     #fig, ax = plt.subplots()
-    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     print(n_equal_bins)
     opacity = 0.75
     plt.hist(conf_T[cls], n_equal_bins, alpha=opacity, color='g', label='True Predictions')
@@ -789,6 +789,25 @@ if draw_plot:
     plt.savefig(output_path)
     #plt.show()
 
+  # plot FA vs. Confidence
+    if len(conf_T[cls] + conf_T[cls]) == 0: continue
+    output_path = results_files_path + "/FA vs Confidence of " + cls + ".png"
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
+    plt.figure()
+    plt.hist(conf_F[cls], n_equal_bins, alpha=opacity, color='r', label='False Predictions')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Confidence', fontsize='large')
+    plt.ylabel('FA', fontsize='large')
+    plot_title = "FA vs. Confidence\n"
+    plot_title += str(pred_counter_per_class[cls]) + " predictions, "
+    plot_title += "Class " + cls
+    plt.title(plot_title, fontsize=14)
+    plt.xlim(0, 1)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    plt.tight_layout()
+    plt.savefig(output_path)
 
 """
  Write number of predicted objects per class to results.txt
