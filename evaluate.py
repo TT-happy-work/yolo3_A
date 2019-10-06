@@ -118,13 +118,28 @@ class YoloTest(object):
 
                 if self.epilog_logics:
                     specifc_conf = utils.read_conf_th(self.specifc_conf_file)
+                    bboxes_pr_ROC = bboxes_pr
                     for box_ind in range(len(bboxes_pr)):
                         box_clss = bboxes_pr[box_ind, 0]
                         box_conf = bboxes_pr[box_ind, 1]
                         if box_conf < specifc_conf[box_clss]:
-                            np.delete(bboxes_pr, box_ind, axis=0)
+                            np.delete(bboxes_pr_ROC, box_ind, axis=0)
                     #TODO: overlap btw boxes
-
+                    if self.write_image:
+                        image_ROC = utils.draw_bbox(image * 255, bboxes_pr_ROC, show_label=self.show_label)
+                        cv2.imwrite(self.write_image_path + image_name + '_ROC', image_ROC)
+                    predict_result__ROC_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '_ROC.txt')
+                    with open(predict_result__ROC_path, 'w') as f_ROC:
+                        for bbox in bboxes_pr_ROC:
+                            coor = np.array(bbox[:4], dtype=np.int32)
+                            score = bbox[4]
+                            class_ind = int(bbox[5])
+                            class_name = self.classes[class_ind]
+                            score = '%.4f' % score
+                            xmin, ymin, xmax, ymax = list(map(str, coor))
+                            bbox_mess_ROC = ' '.join([class_name, score, xmin, ymin, xmax, ymax]) + '\n'
+                            f_ROC.write(bbox_mess_ROC)
+                            print('\t' + str(bbox_mess_ROC).strip())
 
                 if self.write_image:
                     image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
