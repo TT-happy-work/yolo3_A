@@ -9,21 +9,22 @@ from core.utils import draw_gt_bbox
 ## This script preorganizes the Taggings of Yolov3 baseline 2 format [f_data_in_path]
 ## into a desired [patch_w, patch_h] cropped Tagging file [f_data_out_path] and images [write_image_path]
 ## main dir of cropped outputs
-write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs/'
+
+###################################################################################
+
+write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06/'
 
 # the Tagging to be cropped:
-f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/dataset/recce_all_Tagging_1_2_3_4_img.txt'
-#f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/dataset/oneImg.txt'
+f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/individual_datasets_without_24/recce_data_Tagging_1_2_3_4_5.txt'
 
 # the outout of this script: the cropped Tagging
-f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/dbgEmptyimg_cropped_Tagging_1_2_3_4_img.txt'
-#f_data_out_path = '/home/tamar/DBs/Reccelite/db_CroppedDB/oneImg.txt'
-
+f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/cropped_1_2_3_4_5_Th06.txt'
 
 patch_w = 1*800
 patch_h = 1*640
 
 cropTH = 0.6 # above this percentage of the bbox included in the path - clip the box. else - ignore the bbox.
+
 ###################################################################################
 
 
@@ -42,6 +43,7 @@ with open(f_data_out_path, 'w') as f_out:
         image_path = line[0]
         if not os.path.exists(image_path):
             raise KeyError("%s does not exist ... " % image_path)
+        print(image_path)
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
         image = np.array(cv2.imread(image_path))
         print("original image size is:", image.shape)
@@ -79,7 +81,7 @@ with open(f_data_out_path, 'w') as f_out:
                 for box in bboxes:
                     cropped1 = []; croppedOne = []
                     # boxes that are completely out of this patch: ignore
-                    if box[0]>=maxW or box[1]>=maxH or box[2]<=minW or (box[3]<=minW):
+                    if box[0]>=maxW or box[1]>=maxH or box[2]<=minW or (box[3]<=minH):
                         continue
                     # boxes that are entirely included in patch: keep
                     elif box[0]>=minW and box[1]>=minH and box[2]<=maxW and box[3]<=maxW:
