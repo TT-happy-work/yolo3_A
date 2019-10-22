@@ -17,6 +17,7 @@ import colorsys
 import numpy as np
 import tensorflow as tf
 from core.config import cfg
+import matplotlib.pyplot as plt
 
 def read_class_names(class_file_name):
     '''loads class name from a file'''
@@ -35,35 +36,127 @@ def get_anchors(anchors_path):
     return anchors.reshape(3, 3, 2)
 
 
+# def image_preporcess(image, target_height, target_width, gt_boxes=None):
+#
+#     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+#
+#     ih, iw    = target_height, target_width
+#     h,  w, _  = image.shape
+#
+#     scale = min(iw/w, ih/h)
+#     nw, nh  = int(scale * w), int(scale * h)
+#     image_resized = cv2.resize(image, (nw, nh))
+#
+#     image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
+#     dw, dh = (iw - nw) // 2, (ih-nh) // 2
+#     image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
+#     image_paded = image_paded / 255.
+#
+#     if gt_boxes is None:
+#         return image_paded
+#
+#     else:
+#         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
+#         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
+#         return image_paded, gt_boxes
+
 def image_preporcess(image, target_height, target_width, gt_boxes=None):
 
+    '''
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-
     ih, iw    = target_height, target_width
     h,  w, _  = image.shape
-
     scale = min(iw/w, ih/h)
     nw, nh  = int(scale * w), int(scale * h)
     image_resized = cv2.resize(image, (nw, nh))
-
+    image_cropped = image[:target_height, :target_width]
     image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
     dw, dh = (iw - nw) // 2, (ih-nh) // 2
     image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
     image_paded = image_paded / 255.
-
     if gt_boxes is None:
         return image_paded
-
-    else:
+    elif cfg.YOLO.IMAGE_HANDLE=='scale':
         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
         return image_paded, gt_boxes
+    elif cfg.YOLO.IMAGE_HANDLE=='crop':
+        gt_boxes_cropped = []
+        for gt in gt_boxes:
+            if (gt[0] >= target_width and gt[2] >= target_width) or (gt[1] >= target_height and gt[2] >= target_height):   # entire box is outside of cropped image
+                continue
+            elif gt[0] < target_width and gt[2] < target_width and gt[3] < target_height and gt[1] < target_height: # entire bbox is included in cropped image
+                gt_boxes_cropped.append(gt)
+            else:
+                if gt[0] >= target_width: gt[0] = target_width - 1
+                if gt[1] >= target_height: gt[1] = target_height - 1
+                if gt[2]>=target_width: gt[2]=target_width-1
+                if gt[3] >= target_height: gt[3] = target_height - 1
+                gt_boxes_cropped.append(gt)
+        return np.array(image_cropped), np.array(gt_boxes_cropped)
+    '''
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+
+    # im = image
+    # plt.figure(); plt.imshow(image/255); plt.title('full org'); plt.show()
+    # ih, iw    = target_height, target_width
+    # h,  w, _  = image.shape
+    # image_resized = cv2.resize(image/255, (target_width, target_height))
+    # image_cropped = image[:target_height, :target_width] /255
+    # plt.figure(); plt.imshow(image_cropped); plt.show()
+    # bboxes = np.array([172.2945,  2266.1885,   211.48303, 2301.762 , 0.37, 6.])
+    # image_draw_full = draw_bbox(im/255, bboxes)
+    # plt.figure(); plt.imshow(image_draw_full); plt.title('full'); plt.show()
+    # bboxes = np.array([172.2945,  639,   211.48303, 639 , 0.37, 6.])
+    # image_draw_crop = draw_bbox(image_cropped, bboxes)
+    # plt.figure(); plt.imshow(image_draw_crop); plt.title('crop'); plt.show()
+
+    ih, iw = target_height, target_width
+    h, w, _ = image.shape
+#    image_resized = cv2.resize(image / 255, (target_width, target_height))
+    image_resized = cv2.resize(image, (target_width, target_height))
+    image_cropped = image[:target_height, :target_width] #/ 255
 
 
-def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
+#### MAYA
+#    image_draw_crop = draw_bbox(image_cropped, gt_boxes)
+#    plt.figure();
+#    plt.imshow(image_draw_crop/255);
+#    plt.title('crop');
+#    plt.show()
+####
+    if gt_boxes is None:
+        if cfg.YOLO.IMAGE_HANDLE=='scale':
+            return image_resized
+        elif cfg.YOLO.IMAGE_HANDLE=='crop':
+            return image_cropped
+        else:
+            return image_cropped
+    elif cfg.YOLO.IMAGE_HANDLE=='scale':
+        gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * iw/w
+        gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * ih/h
+        return image_resized, gt_boxes
+    elif cfg.YOLO.IMAGE_HANDLE=='crop':
+        gt_boxes_cropped = []
+        for gt in gt_boxes:
+            if (gt[0] >= target_width and gt[2] >= target_width) or (gt[1] >= target_height and gt[3] >= target_height):   # entire box is outside of cropped image
+                continue
+            elif gt[0] < target_width and gt[2] < target_width and gt[3] < target_height and gt[1] < target_height: # entire bbox is included in cropped image
+                gt_boxes_cropped.append(gt)
+            else:
+                if gt[0] >= target_width:  gt[0] = target_width - 1
+                if gt[1] >= target_height: gt[1] = target_height - 1
+                if gt[2] >= target_width:  gt[2] = target_width-1
+                if gt[3] >= target_height: gt[3] = target_height - 1
+                gt_boxes_cropped.append(gt)
+        return np.array(image_cropped), np.array(gt_boxes_cropped)
+
+
+def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=False):
     """
     bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates.
     """
+
 
     num_classes = len(classes)
     image_h, image_w, _ = image.shape
@@ -76,6 +169,10 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
     # random.seed(None)
 
     for i, bbox in enumerate(bboxes):
+        ####MAYA
+        bbox = np.append(bbox, 1 )
+        ####
+
         coor = np.array(bbox[:4], dtype=np.int32)
         fontScale = 0.5
         score = bbox[4]
