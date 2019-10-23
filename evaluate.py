@@ -79,13 +79,21 @@ class YoloTest(object):
 
     def evaluate(self):
         predicted_dir_path = './mAP/predicted'
+        reg_folder = '/reg'
+        ROC_folder = '/ROC'
         ground_truth_dir_path = './mAP/ground-truth'
         if os.path.exists(predicted_dir_path): shutil.rmtree(predicted_dir_path)
         if os.path.exists(ground_truth_dir_path): shutil.rmtree(ground_truth_dir_path)
         if os.path.exists(self.write_image_path): shutil.rmtree(self.write_image_path)
+        if os.path.exists(self.write_image_path+'_reg'): shutil.rmtree(self.write_image_path+'reg/')
+        if os.path.exists(self.write_image_path+'_ROC'): shutil.rmtree(self.write_image_path+'ROC/')
         os.mkdir(predicted_dir_path)
+        os.mkdir(predicted_dir_path+reg_folder)
+        os.mkdir(predicted_dir_path+ROC_folder)
         os.mkdir(ground_truth_dir_path)
         os.mkdir(self.write_image_path)
+        os.mkdir(self.write_image_path+reg_folder)
+        os.mkdir(self.write_image_path+ROC_folder)
 
         with open(self.annotation_path, 'r') as annotation_file:
             for num, line in enumerate(annotation_file):
@@ -112,23 +120,22 @@ class YoloTest(object):
                         f.write(bbox_mess)
                         print('\t' + str(bbox_mess).strip())
                 print('=> predict result of %s:' % image_name)
-                predict_result_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '.txt')
+                predict_result_path = os.path.join(predicted_dir_path+reg_folder, image_name.split('.')[0] + '.txt')
                 bboxes_pr = self.predict(image)
                 image, _ = utils.image_preporcess(image, self.target_height, self.target_width, bboxes_pr)
 
                 if self.epilog_logics:
                     specifc_conf = utils.read_conf_th(self.specifc_conf_file)
-                    bboxes_pr_ROC = bboxes_pr
+                    bboxes_pr_ROC = []
                     for box_ind in range(len(bboxes_pr)):
-                        box_clss = bboxes_pr[box_ind, 0]
-                        box_conf = bboxes_pr[box_ind, 1]
-                        if box_conf < specifc_conf[box_clss]:
-                            np.delete(bboxes_pr_ROC, box_ind, axis=0)
-                    #TODO: overlap btw boxes
+                        box_clss = bboxes_pr[box_ind][-1]
+                        box_conf = bboxes_pr[box_ind][-2]
+                        if box_conf >= specifc_conf[self.classes[box_clss]]:
+                            bboxes_pr_ROC.append(bboxes_pr[box_ind])
                     if self.write_image:
                         image_ROC = utils.draw_bbox(image * 255, bboxes_pr_ROC, show_label=self.show_label)
-                        cv2.imwrite(self.write_image_path + image_name + '_ROC', image_ROC)
-                    predict_result__ROC_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '_ROC.txt')
+                        cv2.imwrite(self.write_image_path+'ROC/' + image_name + '_ROC', image_ROC)
+                    predict_result__ROC_path = os.path.join(predicted_dir_path+ROC_folder, image_name.split('.')[0] + '_ROC.txt')
                     with open(predict_result__ROC_path, 'w') as f_ROC:
                         for bbox in bboxes_pr_ROC:
                             coor = np.array(bbox[:4], dtype=np.int32)
@@ -143,7 +150,7 @@ class YoloTest(object):
 
                 if self.write_image:
                     image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
-                    cv2.imwrite(self.write_image_path+image_name, image)
+                    cv2.imwrite(self.write_image_path+'reg/'+image_name, image)
 
                 with open(predict_result_path, 'w') as f:
                     for bbox in bboxes_pr:

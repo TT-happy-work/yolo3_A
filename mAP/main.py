@@ -13,6 +13,9 @@ import random
 random.seed(0)
 np.random.seed(0)
 
+# is the class-specific confidence-threshold is going to be considered (True) or all predicions are going to be cosidered
+ROC_FLAG = True
+
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
@@ -285,7 +288,13 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
 tmp_files_path = "tmp_files"
 if not os.path.exists(tmp_files_path): # if it doesn't exist already
   os.makedirs(tmp_files_path)
-results_files_path = "results"
+  os.makedirs(tmp_files_path+'/gt')
+  os.makedirs(tmp_files_path+'/reg')
+  os.makedirs(tmp_files_path+'/ROC')
+if ROC_FLAG:
+  results_files_path = 'results/ROC'
+else:
+  results_files_path = 'results/reg'
 if os.path.exists(results_files_path): # if it exist already
   # reset the results directory
   shutil.rmtree(results_files_path)
@@ -310,13 +319,30 @@ ground_truth_files_list.sort()
 # dictionary with counter per class
 gt_counter_per_class = {}
 
+# get a list with the predicted files
+predicted_reg_files_list = glob.glob('predicted/reg/*.txt')
+predicted_reg_files_list.sort()
+
+predicted_ROC_files_list = glob.glob('predicted/ROC/*.txt')
+predicted_ROC_files_list.sort()
+
+if ROC_FLAG:
+    predicted_path = 'predicted/ROC/'
+    predicted_files_list = predicted_ROC_files_list
+else:
+    predicted_path = 'predicted/reg/'
+    predicted_files_list = predicted_reg_files_list
+
+
 for txt_file in ground_truth_files_list:
   #print(txt_file)
   file_id = txt_file.split(".txt",1)[0]
   file_id = os.path.basename(os.path.normpath(file_id))
+  if ROC_FLAG:
+    file_id = file_id + '_ROC'
   # check if there is a correspondent predicted objects file
-  if not os.path.exists('predicted/' + file_id + ".txt"):
-    error_msg = "Error. File not found: predicted/" +  file_id + ".txt\n"
+  if not os.path.exists(predicted_path + file_id + ".txt"):
+    error_msg = "Error. File not found: predicted/" + file_id + ".txt\n"
     error_msg += "(You can avoid this error message by running extra/intersect-gt-and-pred.py)"
     error(error_msg)
   lines_list = file_lines_to_list(txt_file)
@@ -353,7 +379,7 @@ for txt_file in ground_truth_files_list:
           # if class didn't exist yet
           gt_counter_per_class[class_name] = 1
   # dump bounding_boxes into a ".json" file
-  with open(tmp_files_path + "/" + file_id + "_ground_truth.json", 'w') as outfile:
+  with open(tmp_files_path + "/gt/" + file_id.split('_ROC')[0] + "_ground_truth.json", 'w') as outfile:
     json.dump(bounding_boxes, outfile)
 
 gt_classes = list(gt_counter_per_class.keys())
@@ -391,9 +417,6 @@ if specific_iou_flagged:
  Predicted
    Load each of the predicted files into a temporary ".json" file.
 """
-# get a list with the predicted files
-predicted_files_list = glob.glob('predicted/*.txt')
-predicted_files_list.sort()
 
 for class_index, class_name in enumerate(gt_classes):
   bounding_boxes = []
@@ -402,6 +425,7 @@ for class_index, class_name in enumerate(gt_classes):
     # the first time it checks if all the corresponding ground-truth files exist
     file_id = txt_file.split(".txt",1)[0]
     file_id = os.path.basename(os.path.normpath(file_id))
+    file_id = file_id.split('_ROC')[0]
     if class_index == 0:
       if not os.path.exists('ground-truth/' + file_id + ".txt"):
         error_msg = "Error. File not found: ground-truth/" +  file_id + ".txt\n"
@@ -423,8 +447,12 @@ for class_index, class_name in enumerate(gt_classes):
         #print(bounding_boxes)
   # sort predictions by decreasing confidence
   bounding_boxes.sort(key=lambda x:float(x['confidence']), reverse=True)
-  with open(tmp_files_path + "/" + class_name + "_predictions.json", 'w') as outfile:
-    json.dump(bounding_boxes, outfile)
+  if ROC_FLAG:
+    with open(tmp_files_path + "/ROC/" + class_name + "_predictions.json", 'w') as outfile:
+      json.dump(bounding_boxes, outfile)
+  else:
+    with open(tmp_files_path + "/reg/" + class_name + "_predictions.json", 'w') as outfile:
+      json.dump(bounding_boxes, outfile)
 
 """
  Calculate the AP for each class
@@ -442,7 +470,10 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
     """
      Load predictions of that class
     """
-    predictions_file = tmp_files_path + "/" + class_name + "_predictions.json"
+    if ROC_FLAG:
+      predictions_file = tmp_files_path + "/ROC/" + class_name + "_predictions.json"
+    else:
+      predictions_file = tmp_files_path + "/reg/" + class_name + "_predictions.json"
     predictions_data = json.load(open(predictions_file))
 
     """
@@ -478,7 +509,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
           img = cv2.copyMakeBorder(img, 0, bottom_border, 0, 0, cv2.BORDER_CONSTANT, value=BLACK)
       # assign prediction to ground truth object if any
       #   open ground-truth with that file_id
-      gt_file = tmp_files_path + "/" + file_id + "_ground_truth.json"
+      gt_file = tmp_files_path + "/gt/" + file_id + "_ground_truth.json"
       ground_truth_data = json.load(open(gt_file))
       ovmax = -1
       gt_match = -1
