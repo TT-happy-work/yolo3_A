@@ -48,6 +48,9 @@ __C.TRAIN.MAX_TO_KEEP           = 100
 # TEST options
 __C.TEST                        = edict()
 __C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=53_test_loss=21.5429.ckpt-53"
+# if USE_WEIGHTS_DIR is False - WEIGHT_FILE is used, otherwise the latest file in the WEIGHT_DIR will be used
+__C.TEST.WEIGHT_DIR             = "../Runs/recce__trt_compatibility_23Oct19_1720_1b15729/checkpoints/"
+__C.TEST.USE_WEIGHTS_DIR        = True
 __C.TEST.ANNOT_PATH            = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_3_4_5_Th06_reg.txt' #cropped_1_2_3_5_Th06_reg_rare.txt'
 __C.TEST.BATCH_SIZE             = 1
 __C.TEST.IMAGE_H                = 640 #1*640#2464

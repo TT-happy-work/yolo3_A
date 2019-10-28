@@ -11,7 +11,9 @@
 #
 #================================================================
 
+import os
 import cv2
+import glob
 import random
 import colorsys
 import numpy as np
@@ -34,6 +36,25 @@ def read_conf_th(conf_th_file_name):
         for name in data:
             names[name.split(',')[0]] = float(name.split(',')[1].split('\n')[0])
     return names
+
+def get_checkpoint_file_path():
+    if not cfg.TEST.USE_WEIGHTS_DIR:
+        return cfg.TEST.WEIGHT_FILE
+    weight_dir = cfg.TEST.WEIGHT_DIR
+    if not os.path.isdir(weight_dir):
+        raise Exception("USE_WEIGHTS_DIR requested but WEIGHT_DIR (%s) is not a directory" % weight_dir)
+    checkpoints_file = os.path.join(weight_dir, 'checkpoint')
+    if os.path.isfile(checkpoints_file):
+        with open(checkpoints_file, 'r') as fd:
+            line = fd.readline()
+            f = line.split(':')[1].strip().strip('"')
+            checkpoint_file = os.path.join(weight_dir,f)
+            return checkpoint_file
+    # failed to read the checkpoint file - looking for the newest file in dir
+    list_of_files = glob.glob(weight_dir + '/*.ckpt-[0-9]*.meta')  # * means all if need specific format then *.csv
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file.rstrip('.meta')
+
 
 def get_anchors(anchors_path):
     '''loads the anchors from a file'''
