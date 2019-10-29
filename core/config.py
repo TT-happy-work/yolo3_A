@@ -10,7 +10,7 @@ cfg                             = __C
 __C.YOLO                        = edict()
 
 # Set the class name
-__C.YOLO.EXP_DIR                = "Precrop_640x800_batch2_deconv",
+__C.YOLO.EXP_DIR                = "croppedImg1235Th06_crop_640x800_batch1_deconv_loadWeights_",
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
@@ -23,7 +23,7 @@ __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.YOLO.IMAGE_HANDLE           = 'crop'  # 'crop' or 'scale'
 __C.YOLO.EPILOG_LOGICS          = True
-__C.YOLO.CONF_TH_FILE                = "./data/classes/recce.confidence_th.txt"
+__C.YOLO.CONF_TH_FILE           = "./data/classes/recce.confidence_th.txt"
 
 
 
@@ -32,9 +32,8 @@ __C.TRAIN                       = edict()
 
 __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
-# __C.TRAIN.ANNOT_PATH            = "./data/dataset/recce_all_Tagging_1_2_3_img.txt"
-__C.TRAIN.ANNOT_PATH            = "/home/tamar/DBs/Reccelite/CroppedDB/cropped_Tagging_1_2_3.txt"
-__C.TRAIN.BATCH_SIZE            = 2
+__C.TRAIN.ANNOT_PATH            = "/home/tamar/DBs/Reccelite/CroppedDB/cropped_1_2_3_5_Th06_reg_rare.txt"
+__C.TRAIN.BATCH_SIZE            = 1
 __C.TRAIN.IMAGE_H               = 1*640 #1*640#2464
 __C.TRAIN.IMAGE_W               = 1*800 #1*800#3296
 __C.TRAIN.DATA_AUG              = False
@@ -48,12 +47,12 @@ __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
 # TEST options
 __C.TEST                        = edict()
 
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=1000_test_loss=nan.ckpt-1000"
+__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_epoch=6_test_loss=nan.ckpt-6"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce3.txt"
-__C.TEST.ANNOT_PATH             = "/home/tamar/DBs/Reccelite/CroppedDB/cropped_recce3.txt"
-__C.TEST.BATCH_SIZE             = 2
-__C.TEST.IMAGE_H                = 1*640 #1*640#2464
-__C.TEST.IMAGE_W                = 1*800 #1*800#3296
+__C.TEST.ANNOT_PATH            = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_shortDbg_Th06_reg_rare.txt' #cropped_1_2_3_5_Th06_reg_rare.txt'
+__C.TEST.BATCH_SIZE             = 1
+__C.TEST.IMAGE_H                = 640 #1*640#2464
+__C.TEST.IMAGE_W                = 800 #1*800#3296
 __C.TEST.DATA_AUG               = False
 __C.TEST.WRITE_IMAGE            = True
 __C.TEST.WRITE_IMAGE_PATH       = "./data/detection/"
@@ -61,3 +60,4 @@ __C.TEST.WRITE_IMAGE_SHOW_LABEL = True
 __C.TEST.SHOW_LABEL             = True
 __C.TEST.SCORE_THRESHOLD        = 0.3
 __C.TEST.IOU_THRESHOLD          = 0.45
+

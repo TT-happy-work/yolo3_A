@@ -36,7 +36,7 @@ def order_points(pts):
 
 
 if __name__ == '__main__':
-    mainDbFolder = '/home/tamar/DBs/Reccelite/Tagging1/'
+    mainDbFolder = '/home/tamar/DBs/Reccelite/Tagging2/'
     subFolderList = os.listdir(mainDbFolder)
     allImgs = []; # list of Img-dictionaries. each dict is the complete info of an img.
     annomal = []; # keep track of all sorts of problems
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         allImgs.append(singleImage_dict)
 
     ## Write contents of dictionary allImgs into recce_dataset.txt as required by k-means
-    fout = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data.txt'
+    fout = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data_Tagging_2.txt'
     f = open(fout, "w")
     for imgIdx in range(len(allImgs)):
         f.write('\n' + allImgs[imgIdx]['imagePath'] + ' ') # write to file the image Name, after which will foloow all info of all tars in img.

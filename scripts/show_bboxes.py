@@ -17,7 +17,7 @@ from PIL import Image
 
 
 label_txt = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data.txt"
-label_txt = '/home/tamar/DBs/Reccelite/CroppedDB/cropped_Tagging_4.txt'
+label_txt = '/home/tamar/Desktop/dbg_anchor'
 num_imgs = len(open(label_txt).readlines())
 
 for img_ind in range(num_imgs):

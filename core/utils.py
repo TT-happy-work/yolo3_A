@@ -193,7 +193,7 @@ def draw_gt_bbox(image, gt_boxes, classes=read_class_names(cfg.YOLO.CLASSES), sh
     # random.seed(None)
 
     # print('len(bboxes) = ', len(bboxes))
-    plt.figure()
+    #plt.figure()
     if gt_boxes==[]: return
     for i, bbox in enumerate(gt_boxes):
         coor = np.array(bbox[:4], dtype=np.int32)
