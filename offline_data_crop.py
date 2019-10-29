@@ -12,13 +12,14 @@ from core.utils import draw_gt_bbox
 
 ###################################################################################
 
-write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06/'
-
+## Inputs:
 # the Tagging to be cropped:
 f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/individual_datasets_without_24/recce_data_Tagging_1_2_3_4_5.txt'
 
-# the outout of this script: the cropped Tagging
-f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/cropped_1_2_3_4_5_Th06.txt'
+## Outputs:
+write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg/'
+# the output of this script: the cropped Tagging
+f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg.txt'
 
 patch_w = 1*800
 patch_h = 1*640
@@ -67,7 +68,7 @@ with open(f_data_out_path, 'w') as f_out:
                 # patch that is last row and last column
                 elif (ind_w == div_w - 1 and ind_h == div_h - 1):
                     minW = orig_image_w - patch_w; minH = orig_image_h - patch_h;
-                    maxW = orig_image_w - 1; maxH = orig_image_w - 1
+                    maxW = orig_image_w; maxH = orig_image_w - 1
                 # patches that are last row
                 elif ind_w != div_w - 1:
                     minW = ind_w*patch_w; minH =  orig_image_h - patch_h
@@ -75,7 +76,7 @@ with open(f_data_out_path, 'w') as f_out:
                 # patches that are last column
                 else:
                     minW =orig_image_w - patch_w; minH = ind_h*patch_h;
-                    maxW = orig_image_w - 1; maxH = (ind_h + 1)*patch_h
+                    maxW = orig_image_w; maxH = (ind_h + 1)*patch_h
                 cropped_image = image[minH:maxH, minW:maxW]
                 cv2.imwrite(write_image_path + cropped_image_name, cropped_image)
                 for box in bboxes:

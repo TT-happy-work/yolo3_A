@@ -12,13 +12,13 @@ import math
 ## into a desired [patch_w, patch_h] cropped Tagging file [f_data_out_path] and images [write_image_path]
 ## main dir of cropped outputs
 
-write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_Rare_1_2_3_5_Th06/'
+write_image_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_rare/'
 
 # the Tagging to be cropped:
-f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/individual_datasets_without_24/recce_data_Tagging_1_2_3_5.txt'
+f_data_in_path = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/individual_datasets_without_24/recce_data_Tagging_1_2_3_4_5.txt'
 
 # the outout of this script: the cropped Tagging
-f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_Rare_1_2_3_5_Th06.txt'
+f_data_out_path = '/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_rare.txt'
 
 
 patch_w = 1*800
@@ -48,7 +48,7 @@ with open(f_data_out_path, 'w') as f_out:
         print(image_path)
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
         image = np.array(cv2.imread(image_path))
-        print("original image size is:", image.shape)
+        #print("original image size is:", image.shape)
         image_format = image_path.split('.')[-1]
         image_name = image_path.split('.')[0].split('/')[-1]
         orig_image_h = image.shape[0]
@@ -56,7 +56,7 @@ with open(f_data_out_path, 'w') as f_out:
         patch_counter = 0
         for the_box_ind in range(len(bboxes)):
             if bboxes[the_box_ind][-1] in rare_cats:
-                print(the_box_ind, bboxes[the_box_ind])
+                # print(the_box_ind, bboxes[the_box_ind])
                 new_img_flag = True
                 cropped_bboxes = []
                 cropped_image_name = image_name + '_' + str(patch_counter) + '_' + classes[bboxes[the_box_ind][-1]] + '.' + image_format
@@ -72,22 +72,31 @@ with open(f_data_out_path, 'w') as f_out:
                     if the_box_center[0] < patch_w/2: # near left edge
                         minW = 0
                         maxW = patch_w
+                        if maxW-minW!=800:
+                            print('case1, shape=', maxW-minW)
                     elif the_box_center[0] > orig_image_w-patch_w/2: # near right edge
                         maxW = orig_image_w
                         minW = maxW - patch_w
+                        if maxW - minW != 800:
+                            print('case2, shape=', maxW-minW)
                     else: # horizontally well-centered
-                        minW = the_box_center[0] - patch_w/2
-                        maxW = the_box_center[0] + patch_w/2
+                        minW = round(the_box_center[0]) - patch_w/2
+                        maxW = round(the_box_center[0]) + patch_w/2
+                        if maxW - minW != 800:
+                            print('case3, shape=', maxW-minW)
                     # take care of height
                     if the_box_center[1] < patch_h/2: # near top edge
                         minH = 0
-                        maxH = patch_h - 1
+                        maxH = patch_h
+                        #print('case4, shape=', maxH-minH)
                     elif the_box_center[1] > orig_image_h - patch_h / 2:  # near bottom edge
                         maxH = orig_image_h
                         minH = maxH - patch_h
+                        #print('case5, shape=', maxH-minH)
                     else:  # vertically well-centered
-                        minH = the_box_center[1] - patch_h/2
-                        maxH = the_box_center[1] + patch_h/2
+                        minH = round(the_box_center[1]) - patch_h/2
+                        maxH = round(the_box_center[1]) + patch_h/2
+                        #print('case6, shape=', maxH-minH)
                 # congrats. you now have a new patch.
                 cropped_image = image[math.floor(minH):math.floor(maxH), math.floor(minW):math.floor(maxW)]
                 cv2.imwrite(write_image_path + cropped_image_name, cropped_image)
@@ -123,10 +132,10 @@ with open(f_data_out_path, 'w') as f_out:
                     croppedOne[:2] = cropped1[:2] - [minW, minH]
                     croppedOne[2:4] = cropped1[2:4] - [minW, minH]
                     croppedOne.append(cropped1[4])
-                    print(minW, minH, maxW, maxH)
-                    print(a_box)
-                    print(cropped1)
-                    print(croppedOne)
+                    # print(minW, minH, maxW, maxH)
+                    # print(a_box)
+                    # print(cropped1)
+                    # print(croppedOne)
                     # write a_box to new dataTxt:
                     if new_img_flag:
                         if new_line_flag:
