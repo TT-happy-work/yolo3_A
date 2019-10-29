@@ -51,6 +51,7 @@ class YoloTrain(object):
         self.steps_per_period = len(self.trainset)
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
+        self.fast_train          = cfg.TRAIN.FAST_TRAIN_NO_EVAL
         self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT
         self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
@@ -208,6 +209,8 @@ class YoloTrain(object):
 
             pbar = tqdm(self.trainset)
             train_epoch_loss, test_epoch_loss = [], []
+            if self.fast_train:
+                test_epoch_loss = train_epoch_loss
 
             j = (epoch - 1) * 85
 
@@ -292,25 +295,26 @@ class YoloTrain(object):
                 # # conv 1, conv 4, conv 9, conv 26, conv 43 -> all conv layers in darknet
                 # # -nadav_wp_pruning
 
-            for test_data in self.testset:
-                if self.data_format == "NCHW":
-                    input_data = test_data[0].transpose([0, 3, 1, 2])  # switch from NHWC to NCHW
-                else:
-                    input_data = test_data[0]
+            if not self.fast_train:
+                for test_data in self.testset:
+                    if self.data_format == "NCHW":
+                        input_data = test_data[0].transpose([0, 3, 1, 2])  # switch from NHWC to NCHW
+                    else:
+                        input_data = test_data[0]
 
-                summary, test_step_loss = self.sess.run(
-                    [self.write_op, self.loss], feed_dict={
-                        self.input_data: input_data,
-                        self.label_sbbox: test_data[1],
-                        self.label_mbbox: test_data[2],
-                        self.label_lbbox: test_data[3],
-                        self.true_sbboxes: test_data[4],
-                        self.true_mbboxes: test_data[5],
-                        self.true_lbboxes: test_data[6],
-                        self.trainable: False,
-                    })
-                test_epoch_loss.append(test_step_loss)
-                self.summary_writer_test.add_summary(summary, global_step_val)
+                        summary, test_step_loss = self.sess.run(
+                            [self.write_op, self.loss], feed_dict={
+                            self.input_data: input_data,
+                            self.label_sbbox: test_data[1],
+                            self.label_mbbox: test_data[2],
+                            self.label_lbbox: test_data[3],
+                            self.true_sbboxes: test_data[4],
+                            self.true_mbboxes: test_data[5],
+                            self.true_lbboxes: test_data[6],
+                            self.trainable: False,
+                        })
+                        test_epoch_loss.append(test_step_loss)
+                        self.summary_writer_test.add_summary(summary, global_step_val)
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
             ckpt_file = "/checkpoints/yolov3_epoch=%s_test_loss=%.4f.ckpt" % (epoch, test_epoch_loss)
