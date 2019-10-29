@@ -57,7 +57,7 @@ class YoloTrain(object):
         self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
 
         with tf.name_scope('output_folder'):
-            timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
+            timestr = datetime.datetime.now().strftime('%Y%m%d_%H%M')
             for i in range(0, len(sp.getstatusoutput('git branch')[1].split())):
                 if sp.getstatusoutput('git branch')[1].split()[i] == '*':
                     gitBranch = sp.getstatusoutput('git branch')[1].split()[i + 1]
