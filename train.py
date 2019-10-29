@@ -46,6 +46,7 @@ class YoloTrain(object):
         self.steps_per_period    = len(self.trainset)
         self.sess                = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name         = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
+        self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
 
         with tf.name_scope('output_folder'):
             timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
@@ -143,7 +144,33 @@ class YoloTrain(object):
         self.sess.run(tf.global_variables_initializer())
         try:
             print('=> Restoring weights from: %s ... ' % self.chkpnt_to_restore)
-            self.loader.restore(self.sess, self.chkpnt_to_restore)
+            if self.upsample_method == 'resize':
+                # Load all from coco
+                self.loader.restore(self.sess, self.chkpnt_to_restore)
+
+            elif self.upsample_method == 'deconv':
+                # Load selectively from coco
+                layers_to_restore = self.net_var[0:297]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
+
+                print('Last restored layer is: %s' % self.net_var[297-1])
+                print('Next un-restored layer is: %s' % self.net_var[297])
+
+                layers_to_restore = self.net_var[300:336]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
+
+                print('Last restored layer is: %s' % self.net_var[336-1])
+                print('Next un-restored layer is: %s' % self.net_var[336])
+
+                layers_to_restore = self.net_var[339:371]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
+
         except:
             print('=> %s does not exist !!!' % self.chkpnt_to_restore)
             print('=> Now it starts to train YOLOV3 from scratch ...')
