@@ -10,7 +10,7 @@ __C.YOLO                        = edict()
 
 # Set the class name
 __C.YOLO.EXP_DIR                = "recce_",
-__C.YOLO.ROOT_DIR               = "../Runs/",
+__C.YOLO.ROOT_DIR               = "./Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
 __C.YOLO.MOVING_AVE_DECAY       = 0.9995
@@ -21,6 +21,7 @@ __C.YOLO.UPSAMPLE_METHOD        = "resize" # interpolation
 __C.YOLO.ORIGINAL_WEIGHT        = "./checkpoint/yolov3_coco.ckpt"
 __C.YOLO.DEMO_WEIGHT            = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.YOLO.IMAGE_HANDLE           = 'scale'  # 'crop' or 'scale'
+__C.YOLO.DATA_FORMAT            = 'NCHW'  # 'NCHW' or 'NHWC' (N-batch size, C-channels, H-height, W-width)
 
 # Train options
 __C.TRAIN                       = edict()
@@ -38,12 +39,17 @@ __C.TRAIN.LEARN_RATE_END        = 1e-6
 __C.TRAIN.WARMUP_EPOCHS         = 20
 __C.TRAIN.FISRT_STAGE_EPOCHS    = 300
 __C.TRAIN.SECOND_STAGE_EPOCHS   = 1000
+__C.TRAIN.WEIGHTED_LOSS         = True
+__C.TRAIN.WEIGHTED_LOSS_MAP     = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  # weight vector with length=number_of_classes
+__C.TRAIN.PRUNING_EPOCH_FREQ    = 100
+
 
 
 
 # TEST options
 __C.TEST                        = edict()
-__C.TEST.WEIGHT_FILE            = "./checkpoint/yolov3_test_loss=248.6961.ckpt-1300"
+__C.TEST.WEIGHT_FILE            = "/media/nadavkad/d2b11252-1c77-4a8b-9dca-50a67d41e880/reccelight/yolo3_A/Runs/recce__weighted_loss_01Aug19_1546_2031a71/checkpoints/yolov3_epoch=1300_test_loss=243.3877.ckpt-1300"
 __C.TEST.ANNOT_PATH             = "./data/dataset/recce_all_Tagging_1_2_img.txt"
 __C.TEST.BATCH_SIZE             = 2
 __C.TEST.IMAGE_H                = 1*800 #2464
