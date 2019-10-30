@@ -87,8 +87,6 @@ def kmeans_w(hist, k, dist=np.median,seed=1):
     :return: numpy array of shape (k, 2)
     """
 
-
-
     cmap = plt.cm.get_cmap('hsv', hist.__len__())
     W=np.empty([0])
     Y=np.array([[],[]]).T
@@ -102,7 +100,8 @@ def kmeans_w(hist, k, dist=np.median,seed=1):
     km = KMeans(n_clusters=k).fit(Y,sample_weight=W)
     plt.scatter(km.cluster_centers_[:,0],km.cluster_centers_[:,1], marker='^', c='k', s=500)
     plt.legend()
-    anchors = np.round(km.cluster_centers_[np.argsort(km.cluster_centers_[:,0]*km.cluster_centers_[:,1])])
+    # anchors = np.round(km.cluster_centers_[np.argsort(km.cluster_centers_[:,0]*km.cluster_centers_[:,1])])
+    anchors = km.cluster_centers_[np.argsort(km.cluster_centers_[:, 0]*km.cluster_centers_[:, 1])]
 
     return anchors
     # rows = boxes.shape[0]
@@ -214,15 +213,15 @@ def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/DBs/Reccelite/CroppedDB/cropped_1_2_3_4_5_Th06_reg_rare.txt")
-    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reg_rare_normalize.txt")
+    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt")
+    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reg_normalize.txt")
     parser.add_argument("--cluster_num", type=int, default=9)
     args = parser.parse_args()
     # anno_result = parse_anno(args.dataset_txt)
     # clusters, nearest_clusters, distances = kmeans(anno_result, args.cluster_num)
 
     anno_result = parse_anno_w(args.dataset_txt)
-    clusters = kmeans_w(anno_result,k=args.cluster_num)
+    clusters = kmeans_w(anno_result, k=args.cluster_num)
 
     # sorted by area
     area = clusters[:, 0] * clusters[:, 1]
