@@ -46,10 +46,14 @@ class Dataset(object):
 
 
     def load_annotations(self, dataset_type):
+        np.random.seed(0)
         with open(self.annot_path, 'r') as f:
             txt = f.readlines()
-            annotations = [line.strip() for line in txt if len(line.strip().split()[1:]) != 0]
-        np.random.seed(0)
+            home_dir = os.path.expanduser('~')
+            if home_dir == '~':
+                home_dir = ''
+            # If user or $HOME is unknown, do nothing
+            annotations = [os.path.join(home_dir,line.strip()) for line in txt if len(line.strip().split()[1:]) != 0]
         np.random.shuffle(annotations)
         return annotations
 

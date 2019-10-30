@@ -96,8 +96,11 @@ class YoloTest(object):
         os.mkdir(self.write_image_path+ROC_folder)
 
         with open(self.annotation_path, 'r') as annotation_file:
+            home_dir = os.path.expanduser('~')
+            if home_dir == '~':
+                home_dir = ''
             for num, line in enumerate(annotation_file):
-                annotation = line.strip().split()
+                annotation = os.path.join(home_dir, line.strip()).split()
                 image_path = annotation[0]
                 image_name = image_path.split('/')[-1]
                 image = cv2.imread(image_path)

@@ -37,7 +37,11 @@ if args.set_class_iou is not None:
   specific_iou_flagged = True
 
 # if there are no images then no animation can be shown
-img_path = '/home/tamar/DBs/Reccelite/Tagging_1_2_img' #'images'
+home_dir = os.path.expanduser('~')
+if home_dir == '~':
+  home_dir = ''
+# If user or $HOME is unknown, do nothing
+img_path = os.path.join(home_dir, 'DBs/Reccelite/Tagging_1_2_img') #'images'
 if os.path.exists(img_path): 
   for dirpath, dirnames, files in os.walk(img_path):
     if not files:
@@ -796,7 +800,7 @@ if draw_plot:
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
     output_path = results_files_path + "/Confidence reliability of " + cls + ".png"
     #fig, ax = plt.subplots()
-    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     print(n_equal_bins)
     opacity = 0.75
     plt.hist(conf_T[cls], n_equal_bins, alpha=opacity, color='g', label='True Predictions')
@@ -816,6 +820,25 @@ if draw_plot:
     plt.savefig(output_path)
     #plt.show()
 
+  # plot FA vs. Confidence
+    if len(conf_T[cls] + conf_T[cls]) == 0: continue
+    output_path = results_files_path + "/FA vs Confidence of " + cls + ".png"
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
+    plt.figure()
+    plt.hist(conf_F[cls], n_equal_bins, alpha=opacity, color='r', label='False Predictions')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Confidence', fontsize='large')
+    plt.ylabel('FA', fontsize='large')
+    plot_title = "FA vs. Confidence\n"
+    plot_title += str(pred_counter_per_class[cls]) + " predictions, "
+    plot_title += "Class " + cls
+    plt.title(plot_title, fontsize=14)
+    plt.xlim(0, 1)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    plt.tight_layout()
+    plt.savefig(output_path)
 
 """
  Write number of predicted objects per class to results.txt
