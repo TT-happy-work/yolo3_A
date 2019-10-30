@@ -14,6 +14,7 @@ __C.YOLO.EXP_DIR                = "croppedImg1235Th06_crop_640x800_batch1_deconv
 __C.YOLO.ROOT_DIR               = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/Runs/",
 __C.YOLO.CLASSES                = "./data/classes/recce.names"
 __C.YOLO.ANCHORS                = "./data/anchors/recce_anchors_2.txt"
+__C.YOLO.ANCHORS                = "./data/anchors/anchors_reg_normalize.txt"
 __C.YOLO.MOVING_AVE_DECAY       = 0.9995
 __C.YOLO.STRIDES                = [8, 16, 32]
 __C.YOLO.ANCHOR_PER_SCALE       = 3
@@ -32,7 +33,7 @@ __C.TRAIN                       = edict()
 
 __C.TRAIN.INITIAL_WEIGHT        = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
-__C.TRAIN.ANNOT_PATH            = "/home/tamar/DBs/Reccelite/CroppedDB/cropped_1_2_3_5_Th06_reg_rare.txt"
+__C.TRAIN.ANNOT_PATH            = "/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt"
 __C.TRAIN.BATCH_SIZE            = 1
 __C.TRAIN.IMAGE_H               = 1*640 #1*640#2464
 __C.TRAIN.IMAGE_W               = 1*800 #1*800#3296
