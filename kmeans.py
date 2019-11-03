@@ -17,7 +17,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 current_palette = list(sns.xkcd_rgb.values())
-from sklearn.cluster import KMeans
 
 def iou(box, clusters):
     """
@@ -77,78 +76,6 @@ def kmeans(boxes, k, dist=np.median,seed=1):
 
     return clusters, nearest_clusters, distances
 
-
-def kmeans_w(hist, k, dist=np.median,seed=1):
-    """
-    Calculates k-means clustering with the Intersection over Union (IoU) metric.
-    :param boxes: numpy array of shape (r, 2), where r is the number of rows
-    :param k: number of clusters
-    :param dist: distance function
-    :return: numpy array of shape (k, 2)
-    """
-
-    cmap = plt.cm.get_cmap('hsv', hist.__len__())
-    W=np.empty([0])
-    Y=np.array([[],[]]).T
-
-    for ii,cls in enumerate(hist):
-        X=np.array(hist[cls])
-        plt.scatter(X[:,0],X[:,1], c=cmap(ii), label=cls)
-        W=np.concatenate([W,[1./len(hist[cls])]*len(hist[cls])])
-        Y=np.concatenate([Y,X],axis=0)
-
-    km = KMeans(n_clusters=k).fit(Y,sample_weight=W)
-    plt.scatter(km.cluster_centers_[:,0],km.cluster_centers_[:,1], marker='^', c='k', s=500)
-    plt.legend()
-    # anchors = np.round(km.cluster_centers_[np.argsort(km.cluster_centers_[:,0]*km.cluster_centers_[:,1])])
-    anchors = km.cluster_centers_[np.argsort(km.cluster_centers_[:, 0]*km.cluster_centers_[:, 1])]
-
-    return anchors
-    # rows = boxes.shape[0]
-    # distances     = np.empty((rows, k)) ## N row x N cluster
-    # last_clusters = np.zeros((rows,))
-    #
-    # np.random.seed(seed)
-    #
-    # # initialize the cluster centers to be k items
-    # clusters = boxes[np.random.choice(rows, k, replace=False)]
-    #
-    # while True:
-    #     # Step 1: allocate each item to the closest cluster centers
-    #     for icluster in range(k): # I made change to lars76's code here to make the code faster
-    #         distances[:,icluster] = 1 - iou(clusters[icluster], boxes)
-    #
-    #     nearest_clusters = np.argmin(distances, axis=1)
-    #
-    #     if (last_clusters == nearest_clusters).all():
-    #         break
-    #
-    #     # Step 2: calculate the cluster centers as mean (or median) of all the cases in the clusters.
-    #     for cluster in range(k):
-    #         clusters[cluster] = dist(boxes[nearest_clusters == cluster], axis=0)
-    #     last_clusters = nearest_clusters
-    #
-    # return clusters, nearest_clusters, distances
-
-
-def parse_anno_w(annotation_path, image_h=640, image_w=800):
-    anno = open(annotation_path, 'r')
-    result = {}
-    for line in anno:
-        s = line.strip().split(' ')
-        s = s[1:]
-        box_cnt = len(s) // 5
-        for i in range(box_cnt):
-            ss = s[i].split(',')
-            x_min, y_min, x_max, y_max = float(ss[0]), float(ss[1]), float(ss[2]), float(ss[3])
-            width  = (x_max - x_min) / image_w
-            height = (y_max - y_min) / image_h
-            if int(float(ss[4])) in result.keys():
-                result[int(float(ss[4]))].append([width, height])
-            else:
-                result.update({int(float(ss[4])): [[width, height]]})
-
-    return result
 
 
 def parse_anno(annotation_path):
@@ -213,15 +140,12 @@ def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt")
-    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reg_normalize.txt")
+    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/dataset/recce_all_Tagging_1_2_img.txt")
+    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reconst_recce_anchors_1.txt")
     parser.add_argument("--cluster_num", type=int, default=9)
     args = parser.parse_args()
-    # anno_result = parse_anno(args.dataset_txt)
-    # clusters, nearest_clusters, distances = kmeans(anno_result, args.cluster_num)
-
-    anno_result = parse_anno_w(args.dataset_txt)
-    clusters = kmeans_w(anno_result, k=args.cluster_num)
+    anno_result = parse_anno(args.dataset_txt)
+    clusters, nearest_clusters, distances = kmeans(anno_result, args.cluster_num)
 
     # sorted by area
     area = clusters[:, 0] * clusters[:, 1]
