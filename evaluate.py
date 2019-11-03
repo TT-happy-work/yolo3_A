@@ -20,6 +20,9 @@ import core.utils as utils
 from core.config import cfg
 from core.yolov3 import YOLOV3
 
+
+# os.environ["CUDA_VISIBLE_DEVICES"]=""
+
 class YoloTest(object):
     def __init__(self):
         self.target_height     =  cfg.TEST.IMAGE_H

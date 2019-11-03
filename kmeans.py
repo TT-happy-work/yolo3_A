@@ -74,6 +74,7 @@ def kmeans(boxes, k, dist=np.median,seed=1):
             clusters[cluster] = dist(boxes[nearest_clusters == cluster], axis=0)
         last_clusters = nearest_clusters
 
+
     return clusters, nearest_clusters, distances
 
 
@@ -83,15 +84,15 @@ def parse_anno(annotation_path):
     result = []
     for line in anno:
         s = line.strip().split(' ')
-        image = cv2.imread(s[0])
-        image_h, image_w = image.shape[:2]
+        # image = cv2.imread(s[0])
+        # image_h, image_w = image.shape[:2]
         s = s[1:]
         box_cnt = len(s) // 5
         for i in range(box_cnt):
             ss = s[i].split(',')
             x_min, y_min, x_max, y_max = float(ss[0]), float(ss[1]), float(ss[2]), float(ss[3])
-            width  = (x_max - x_min) / image_w
-            height = (y_max - y_min) / image_h
+            width  = (x_max - x_min) #/ image_w
+            height = (y_max - y_min) #/ image_h
             result.append([width, height])
     result = np.asarray(result)
     return result
@@ -140,8 +141,8 @@ def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/dataset/recce_all_Tagging_1_2_img.txt")
-    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_reconst_recce_anchors_1.txt")
+    parser.add_argument("--dataset_txt", type=str, default="/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt")
+    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_1-5_cropped_keras.txt")
     parser.add_argument("--cluster_num", type=int, default=9)
     args = parser.parse_args()
     anno_result = parse_anno(args.dataset_txt)
@@ -151,14 +152,15 @@ if __name__ == '__main__':
     area = clusters[:, 0] * clusters[:, 1]
     indice = np.argsort(area)
     clusters = clusters[indice]
+    WithinClusterMeanDist = np.mean(distances[np.arange(distances.shape[0]),nearest_clusters])
+    plot_cluster_result(clusters, nearest_clusters, 1-WithinClusterMeanDist, anno_result, args.cluster_num)
+
+    clusters[0:3,:]/=8
+    clusters[3:6, :] /= 16
+    clusters[6:, :] /= 32
     with open(args.anchors_txt, "w") as f:
         for i in range(args.cluster_num):
             width, height = clusters[i]
             f.writelines(str(width) + " " + str(height) + " ")
 
-    WithinClusterMeanDist = np.mean(distances[np.arange(distances.shape[0]),nearest_clusters])
-    plot_cluster_result(clusters, nearest_clusters, 1-WithinClusterMeanDist, anno_result, args.cluster_num)
     a=1
-
-
-

@@ -292,8 +292,11 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
 tmp_files_path = "tmp_files"
 if not os.path.exists(tmp_files_path): # if it doesn't exist already
   os.makedirs(tmp_files_path)
+if not os.path.exists(tmp_files_path+'/gt'):
   os.makedirs(tmp_files_path+'/gt')
+if not os.path.exists(tmp_files_path+'/reg'):
   os.makedirs(tmp_files_path+'/reg')
+if not os.path.exists(tmp_files_path+'/ROC'):
   os.makedirs(tmp_files_path+'/ROC')
 if ROC_FLAG:
   results_files_path = 'results/ROC'
@@ -765,6 +768,41 @@ for class_name in pred_classes:
     count_true_positives[class_name] = 0
 #print(count_true_positives)
 
+
+"""
+  Plot the statics of FAR and PD
+  PD  = TP[cls]/GT[cls]
+  FAR = FP[cls]/pred[cls]
+"""
+if draw_plot:
+  window_title = "PD and FAR"
+  output_path = results_files_path + "/PD and FAR.png"
+  to_show = False
+  classes = list(set().union(pred_classes, gt_classes))
+  N = len(classes)
+  PD = []; FAR = []; CLS = []
+  for cls in classes:
+    if cls not in pred_classes:
+      clsPD = 0
+      clsFAR = 0
+    else:
+      clsPD = len(conf_T[cls])/ gt_counter_per_class[cls]
+      clsFAR = len(conf_F[cls]) / pred_counter_per_class[cls]
+    PD.append(clsPD)
+    FAR.append(clsFAR)
+    CLS.append(cls)
+  width = 0.35
+  p1 = plt.bar(np.arange(N), PD, width)
+  p2 = plt.bar(np.arange(N), FAR, width,
+               bottom=PD)
+  plt.ylabel('Statistics')
+  plt.title('PD and FAR Statistics per Class')
+  plt.xticks(np.arange(N), CLS)
+  plt.yticks(np.arange(0, 120, 5))
+  plt.legend((p1[0], p2[0]), ('PD', 'FAR'))
+
+
+
 """
  Plot the total number of occurences of each class in the "predicted" folder
  Plot the amount of true/false positives Vs. Confidence - per class and total
@@ -821,7 +859,7 @@ if draw_plot:
     #plt.show()
 
   # plot FA vs. Confidence
-    if len(conf_T[cls] + conf_T[cls]) == 0: continue
+    if len(conf_T[cls] + conf_F[cls]) == 0: continue
     output_path = results_files_path + "/FA vs Confidence of " + cls + ".png"
     n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     plt.figure()

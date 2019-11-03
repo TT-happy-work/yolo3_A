@@ -139,7 +139,7 @@ class YoloTrain(object):
             variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
             self.loader = tf.train.Saver(variables_to_restore)
             # -nadav_wp_pruning
-            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=50)
 
         with tf.name_scope('summary'):
             tf.summary.scalar("learn_rate", self.learn_rate)
@@ -231,6 +231,7 @@ class YoloTrain(object):
                                                 self.trainable:    True
                 })
                 self.summary_writer_train.add_summary(summary, global_step_val)
+                train_epoch_loss.append(train_step_loss)
                 pbar.set_description("train loss: %.2f" %train_step_loss)
 
                 # # nadav_wp_pruning-
