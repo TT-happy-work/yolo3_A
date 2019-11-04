@@ -41,7 +41,6 @@ class YoloTrain(object):
         self.pruning_epoch_freq = cfg.TRAIN.PRUNING_EPOCH_FREQ
         # -nadav_wp_pruning
         self.warmup_periods = cfg.TRAIN.WARMUP_EPOCHS
-        self.initial_weight = cfg.TRAIN.INITIAL_WEIGHT
         self.chkpnt_to_restore = cfg.TRAIN.RESTORE_CHKPT
         self.time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
         self.moving_ave_decay = cfg.YOLO.MOVING_AVE_DECAY
