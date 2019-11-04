@@ -14,7 +14,7 @@ random.seed(0)
 np.random.seed(0)
 
 # is the class-specific confidence-threshold is going to be considered (True) or all predicions are going to be cosidered
-ROC_FLAG = True
+ROC_FLAG = False
 
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
@@ -775,6 +775,7 @@ for class_name in pred_classes:
   FAR = FP[cls]/pred[cls]
 """
 if draw_plot:
+  plt.figure()
   window_title = "PD and FAR"
   output_path = results_files_path + "/PD and FAR.png"
   to_show = False

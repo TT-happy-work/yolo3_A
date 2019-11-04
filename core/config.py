@@ -30,7 +30,7 @@ __C.YOLO.CONF_TH_FILE           = "./data/classes/recce.confidence_th.txt"
 # Train options
 __C.TRAIN                       = edict()
 
-__C.TRAIN.RESTORE_CHKPT          = "./checkpoint/./checkpoint/yolov3_coco_demo.ckpt"
+__C.TRAIN.RESTORE_CHKPT          = "./checkpoint/yolov3_coco_demo.ckpt"
 __C.TRAIN.ANNOT_PATH            = "/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt"
 __C.TRAIN.BATCH_SIZE            = 2
 __C.TRAIN.IMAGE_H               = 1*640 #1*640#2464
