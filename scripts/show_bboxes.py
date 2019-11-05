@@ -17,7 +17,6 @@ from PIL import Image
 
 
 label_txt = "./data/recce_data.txt"
-label_txt = '/home/tamar/Desktop/dbg_anchor'
 num_imgs = len(open(label_txt).readlines())
 
 for img_ind in range(num_imgs):
@@ -34,4 +33,3 @@ for img_ind in range(num_imgs):
     image = Image.fromarray(np.uint8(image))
     print(image_path.split('/')[-1])
     image.show()
-    pass

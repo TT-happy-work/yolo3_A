@@ -80,8 +80,7 @@ with open(f_data_out_path, 'w') as f_out:
                 cropped_image = image[minH:maxH, minW:maxW]
                 cv2.imwrite(write_image_path + cropped_image_name, cropped_image)
                 for box in bboxes:
-                    cropped1 = []; croppedOne = []
-                    # boxes that are completely out of this patch: ignore
+                    cropped1, croppedOne = [], []                    # boxes that are completely out of this patch: ignore
                     if box[0]>=maxW or box[1]>=maxH or box[2]<=minW or (box[3]<=minH):
                         continue
                     # boxes that are entirely included in patch: keep

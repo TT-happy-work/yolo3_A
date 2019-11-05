@@ -775,12 +775,14 @@ for class_name in pred_classes:
   FAR = FP[cls]/pred[cls]
 """
 if draw_plot:
-  plt.figure()
+  fig = plt.figure(facecolor="white")
   window_title = "PD and FAR"
   output_path = results_files_path + "/PD and FAR.png"
-  to_show = False
+  # to_show = False
   classes = list(set().union(pred_classes, gt_classes))
   N = len(classes)
+  # colors = plt.cm.BuPu(np.linspace(0.8, 0.5, 2)) # 2 is the number of data-type per each class (1.PD 2.FAR)
+  colors = []; colors.append('darkturquoise'); colors.append('violet')
   PD = []; FAR = []; CLS = []
   for cls in classes:
     if cls not in pred_classes:
@@ -792,15 +794,50 @@ if draw_plot:
     PD.append(clsPD)
     FAR.append(clsFAR)
     CLS.append(cls)
-  width = 0.35
-  p1 = plt.bar(np.arange(N), PD, width)
-  p2 = plt.bar(np.arange(N), FAR, width,
-               bottom=PD)
-  plt.ylabel('Statistics')
-  plt.title('PD and FAR Statistics per Class')
-  plt.xticks(np.arange(N), CLS)
-  plt.yticks(np.arange(0, 120, 5))
-  plt.legend((p1[0], p2[0]), ('PD', 'FAR'))
+  width = 0.85
+  # p1 = plt.bar(np.arange(N), PD, width, color=colors[0])
+  # p2 = plt.bar(np.arange(N), FAR, width, bottom=PD, color=colors[1])
+  ax = fig.add_subplot(1, 1, 1)
+  ax1 = ax.bar(np.arange(N), PD, width=width, label="PD  [TP/GT]", color="darkturquoise")
+  ax2 = ax.bar(np.arange(N), FAR, bottom=PD, width=width, label="FAR [FP/PRED]", color="violet")
+
+  ax.set_ylabel('Statistics')
+  ax.set_title('PD and FAR Statistics per class')
+  plt.xticks(np.arange(N), CLS[:], rotation=90)
+  # plt.xticks([])
+  # plt.yticks(np.arange(0, 1.2, 5))
+  ax.legend(loc='best')
+  for i,cls in enumerate(CLS):
+    pd_val = " " + '%.1f'%(PD[i]*100)+'%'
+    far_val = pd_val + " " + '%.1f'%(FAR[i]*100)+'%'
+    if PD[i]:
+      # plt.text(i, PD[i]/2, '%0.1f'%(PD[i]*100)+'%'+'\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+      plt.text(i, PD[i]/2, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
+      plt.text(i, PD[i]/2, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+    if FAR[i]:
+      # plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%'+'\n[%d/%d]'%(len(conf_F[cls]),pred_counter_per_class[cls]), va='center', fontweight='bold', color="darkorchid", fontsize=8) #FAR
+      plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%', va='center', fontweight='bold', color="darkorchid", fontsize=10) #FAR
+      plt.text(i-0.4, PD[i]+FAR[i]/2, '\n\n[%d/%d]'%(len(conf_F[cls]),pred_counter_per_class[cls]), va='center', fontweight='bold', color="darkorchid", fontsize=8) #FAR
+
+    # plt.text(r1.get_x() + r1.get_width() / 2., h1 / 2., "%d" % h1, ha="center", va="center", color="navy", fontsize=8,
+    #          fontweight="bold")
+    # plt.text(r2.get_x() + r2.get_width() / 2., h1 + h2 / 2., "%d" % h2, ha="center", va="center", color="navy",
+    #          fontsize=8, fontweight="bold")
+  # Add a table at the bottom of the axes
+  # colors = colors[::-1]
+  # cell_text = []
+  # cell_text.append(FAR)
+  # cell_text.append(PD)
+  # the_table = plt.table(cellText=cell_text,
+  #                        rowLabels=['FAR', 'PD'],
+  #                        rowColours=colors,
+  #                        colLabels=CLS[:],
+  #                        fontsize=8,
+  #                        loc='bottom')
+  # plt.subplots_adjust(left=0.1, bottom=0.1)
+  plt.tight_layout()
+  plt.show()
+  fig.savefig(output_path)
 
 
 

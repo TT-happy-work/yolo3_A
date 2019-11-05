@@ -53,6 +53,7 @@ class YoloTrain(object):
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
         self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT
+        self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
 
         with tf.name_scope('output_folder'):
             timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
@@ -138,7 +139,7 @@ class YoloTrain(object):
             variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
             self.loader = tf.train.Saver(variables_to_restore)
             # -nadav_wp_pruning
-            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=20)
+            self.saver = tf.train.Saver(tf.global_variables(), self.max_to_keep)
 
         with tf.name_scope('summary'):
             tf.summary.scalar("learn_rate", self.learn_rate)
