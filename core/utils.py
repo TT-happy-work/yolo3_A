@@ -159,7 +159,7 @@ def image_preporcess(image, target_height, target_width, gt_boxes=None):
         return image_cropped, np.array(gt_boxes_cropped)
 
 
-def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
+def draw_bbox(image, bboxes, classes=[], show_label=True):
     """
     bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates.
     """
@@ -197,7 +197,7 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
     return image
 
 
-def draw_gt_bbox(image, gt_boxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
+def draw_gt_bbox(image, gt_boxes, classes=[], show_label=True):
     """
     bboxes: [x_min, y_min, x_max, y_max, cls_id] format coordinates.
     """
