@@ -46,7 +46,6 @@ class Dataset(object):
 
 
     def load_annotations(self, dataset_type):
-        np.random.seed(0)
         with open(self.annot_path, 'r') as f:
             txt = f.readlines()
             home_dir = os.path.expanduser('~')
