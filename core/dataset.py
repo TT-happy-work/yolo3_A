@@ -42,9 +42,11 @@ class Dataset(object):
         self.num_samples = len(self.annotations)
         self.num_batchs = int(np.ceil(self.num_samples / self.batch_size))
         self.batch_count = 0
+        self.image_handle = cfg.YOLO.IMAGE_HANDLE
 
 
     def load_annotations(self, dataset_type):
+        np.random.seed(0)
         with open(self.annot_path, 'r') as f:
             txt = f.readlines()
             home_dir = os.path.expanduser('~')
@@ -84,9 +86,9 @@ class Dataset(object):
                     index = self.batch_count * self.batch_size + num
                     if index >= self.num_samples: index -= self.num_samples
                     annotation = self.annotations[index]
-                    image, bboxes = self.parse_annotation(annotation)
-                    label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes)
-
+                    image, bboxes, orig_shape = self.parse_annotation(annotation)
+                    label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = \
+                        self.preprocess_true_boxes(bboxes, orig_shape)
                     batch_image[num, :, :, :] = image
                     batch_label_sbbox[num, :, :, :, :] = label_sbbox
                     batch_label_mbbox[num, :, :, :, :] = label_mbbox
@@ -165,6 +167,7 @@ class Dataset(object):
             raise KeyError("%s does not exist ... " %image_path)
         image = np.array(cv2.imread(image_path))
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
+        orig_image_shape = image.shape
 
         if self.data_aug:
             image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
@@ -172,7 +175,7 @@ class Dataset(object):
             image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
 
         image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))
-        return image, bboxes
+        return image, bboxes, orig_image_shape
 
     def bbox_iou(self, boxes1, boxes2):
 
@@ -196,7 +199,7 @@ class Dataset(object):
 
         return inter_area / union_area
 
-    def preprocess_true_boxes(self, bboxes):
+    def preprocess_true_boxes(self, bboxes, image_shape):
 
         label = [np.zeros((self.train_output_sizes_h[i], self.train_output_sizes_w[i], self.anchor_per_scale,
                            5 + self.num_classes)) for i in range(3)]
@@ -218,10 +221,17 @@ class Dataset(object):
 
             iou = []
             exist_positive = False
+            ratio_h = image_shape[0]/self.input_height
+            ratio_w = image_shape[1]/self.input_width
             for i in range(3):
                 anchors_xywh = np.zeros((self.anchor_per_scale, 4))
                 anchors_xywh[:, 0:2] = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32) + 0.5
-                anchors_xywh[:, 2:4] = self.anchors[i]
+                if self.image_handle == 'scale':
+                    anchors_xywh[:, 2:4] = self.anchors[i]
+                elif self.image_handle == 'crop':
+                    anchors_xywh[:, 2:4] = self.anchors[i]
+                    # anchors_xywh[:, 2] = self.anchors[i][:, 0] / ratio_w
+                    # anchors_xywh[:, 3] = self.anchors[i][:, 1] / ratio_h
 
                 iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)
                 iou.append(iou_scale)
@@ -229,44 +239,39 @@ class Dataset(object):
 
                 if np.any(iou_mask):
                     xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
-
-                    if xind >= label[i].shape[0]:
-                        xind = label[i].shape[0] -1
+                    if xind >= label[i].shape[1]:
+                        xind = label[i].shape[1] -1
                     elif xind<0:
                         xind=0
-                    if yind >= label[i].shape[1]:
-                        yind = label[i].shape[1] -1
+                    if yind >= label[i].shape[0]:
+                        yind = label[i].shape[0] -1
                     elif yind<0:
                         yind=0
                     label[i][yind, xind, iou_mask, :] = 0
                     label[i][yind, xind, iou_mask, 0:4] = bbox_xywh
                     label[i][yind, xind, iou_mask, 4:5] = 1.0
                     label[i][yind, xind, iou_mask, 5:] = smooth_onehot
-
                     bbox_ind = int(bbox_count[i] % self.max_bbox_per_scale)
                     bboxes_xywh[i][bbox_ind, :4] = bbox_xywh
                     bbox_count[i] += 1
                     exist_positive = True
-
             if not exist_positive:
                 best_anchor_ind = np.argmax(np.array(iou).reshape(-1), axis=-1)
                 best_detect = int(best_anchor_ind / self.anchor_per_scale)
                 best_anchor = int(best_anchor_ind % self.anchor_per_scale)
                 xind, yind = np.floor(bbox_xywh_scaled[best_detect, 0:2]).astype(np.int32)
-
-                if xind >= label[best_detect].shape[0]:
-                    xind = label[best_detect].shape[0] -1
+                if xind >= label[best_detect].shape[1]:
+                    xind = label[best_detect].shape[1] -1
                 elif xind<0:
                     xind=0
-                if yind >= label[best_detect].shape[1]:
-                    yind = label[best_detect].shape[1] -1
+                if yind >= label[best_detect].shape[0]:
+                    yind = label[best_detect].shape[0] -1
                 elif yind<0:
                     yind=0
                 label[best_detect][yind, xind, best_anchor, :] = 0
                 label[best_detect][yind, xind, best_anchor, 0:4] = bbox_xywh
                 label[best_detect][yind, xind, best_anchor, 4:5] = 1.0
                 label[best_detect][yind, xind, best_anchor, 5:] = smooth_onehot
-
                 bbox_ind = int(bbox_count[best_detect] % self.max_bbox_per_scale)
                 bboxes_xywh[best_detect][bbox_ind, :4] = bbox_xywh
                 bbox_count[best_detect] += 1
@@ -276,7 +281,3 @@ class Dataset(object):
 
     def __len__(self):
         return self.num_batchs
-
-
-
-

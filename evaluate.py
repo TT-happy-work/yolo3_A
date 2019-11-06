@@ -20,22 +20,25 @@ import core.utils as utils
 from core.config import cfg
 from core.yolov3 import YOLOV3
 
+
 class YoloTest(object):
     def __init__(self):
-        self.target_height    =  cfg.TEST.IMAGE_H
-        self.target_width     = cfg.TEST.IMAGE_W
-        self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
-        self.classes          = utils.read_class_names(cfg.YOLO.CLASSES)
-        self.num_classes      = len(self.classes)
-        self.anchors          = np.array(utils.get_anchors(cfg.YOLO.ANCHORS))
-        self.score_threshold  = cfg.TEST.SCORE_THRESHOLD
-        self.iou_threshold    = cfg.TEST.IOU_THRESHOLD
-        self.moving_ave_decay = cfg.YOLO.MOVING_AVE_DECAY
-        self.annotation_path  = cfg.TEST.ANNOT_PATH
-        self.weight_file      = cfg.TEST.WEIGHT_FILE
-        self.write_image      = cfg.TEST.WRITE_IMAGE
-        self.write_image_path = cfg.TEST.WRITE_IMAGE_PATH
-        self.show_label       = cfg.TEST.SHOW_LABEL
+        self.target_height     = cfg.TEST.IMAGE_H
+        self.target_width      = cfg.TEST.IMAGE_W
+        self.anchor_per_scale  = cfg.YOLO.ANCHOR_PER_SCALE
+        self.classes           = utils.read_class_names(cfg.YOLO.CLASSES)
+        self.num_classes       = len(self.classes)
+        self.anchors           = np.array(utils.get_anchors(cfg.YOLO.ANCHORS))
+        self.score_threshold   = cfg.TEST.SCORE_THRESHOLD
+        self.iou_threshold     = cfg.TEST.IOU_THRESHOLD
+        self.moving_ave_decay  = cfg.YOLO.MOVING_AVE_DECAY
+        self.annotation_path   = cfg.TEST.ANNOT_PATH
+        self.weight_file       = cfg.TEST.WEIGHT_FILE
+        self.write_image       = cfg.TEST.WRITE_IMAGE
+        self.write_image_path  = cfg.TEST.WRITE_IMAGE_PATH
+        self.show_label        = cfg.TEST.SHOW_LABEL
+        self.epilog_logics     = cfg.YOLO.EPILOG_LOGICS
+        self.specifc_conf_file = cfg.YOLO.CONF_TH_FILE
 
         with tf.name_scope('input'):
             self.input_data = tf.placeholder(dtype=tf.float32, name='input_data')
@@ -76,14 +79,22 @@ class YoloTest(object):
         return bboxes
 
     def evaluate(self):
-        predicted_dir_path = './mAP/predicted'
+        predicted_dir_path = './mAP/predicted/'
+        reg_folder = 'reg'
+        ROC_folder = 'ROC'
         ground_truth_dir_path = './mAP/ground-truth'
         if os.path.exists(predicted_dir_path): shutil.rmtree(predicted_dir_path)
         if os.path.exists(ground_truth_dir_path): shutil.rmtree(ground_truth_dir_path)
         if os.path.exists(self.write_image_path): shutil.rmtree(self.write_image_path)
+        if os.path.exists(os.path.join(self.write_image_path, 'reg')): shutil.rmtree(os.path.join(self.write_image_path, 'reg'))
+        if os.path.exists(os.path.join(self.write_image_path, 'ROC')): shutil.rmtree(os.path.join(self.write_image_path, 'ROC'))
         os.mkdir(predicted_dir_path)
+        os.mkdir(os.path.join(predicted_dir_path, reg_folder))
+        os.mkdir(os.path.join(predicted_dir_path, ROC_folder))
         os.mkdir(ground_truth_dir_path)
         os.mkdir(self.write_image_path)
+        os.mkdir(os.path.join(self.write_image_path, reg_folder))
+        os.mkdir(os.path.join(self.write_image_path, ROC_folder))
 
         with open(self.annotation_path, 'r') as annotation_file:
             home_dir = os.path.expanduser('~')
@@ -113,12 +124,37 @@ class YoloTest(object):
                         f.write(bbox_mess)
                         print('\t' + str(bbox_mess).strip())
                 print('=> predict result of %s:' % image_name)
-                predict_result_path = os.path.join(predicted_dir_path, image_name.split('.')[0] + '.txt')
+                predict_result_path = os.path.join(predicted_dir_path, reg_folder, image_name.split('.')[0] + '.txt')
                 bboxes_pr = self.predict(image)
+                image, _ = utils.image_preporcess(image, self.target_height, self.target_width, bboxes_pr)
 
+                if self.epilog_logics:
+                    specifc_conf = utils.read_conf_th(self.specifc_conf_file)
+                    bboxes_pr_ROC = []
+                    for box_ind in range(len(bboxes_pr)):
+                        box_clss = bboxes_pr[box_ind][-1]
+                        box_conf = bboxes_pr[box_ind][-2]
+                        if box_conf >= specifc_conf[self.classes[box_clss]]:
+                            bboxes_pr_ROC.append(bboxes_pr[box_ind])
+                    if self.write_image:
+                        image_ROC = utils.draw_bbox(image * 255, bboxes_pr_ROC, show_label=self.show_label)
+                        im_path = os.path.join(self.write_image_path,'ROC', image_name + '_ROC')
+                        cv2.imwrite(im_path, image_ROC)
+                    predict_result__ROC_path = os.path.join(predicted_dir_path, ROC_folder, image_name.split('.')[0] + '_ROC.txt')
+                    with open(predict_result__ROC_path, 'w') as f_ROC:
+                        for bbox in bboxes_pr_ROC:
+                            coor = np.array(bbox[:4], dtype=np.int32)
+                            score = bbox[4]
+                            class_ind = int(bbox[5])
+                            class_name = self.classes[class_ind]
+                            score = '%.4f' % score
+                            xmin, ymin, xmax, ymax = list(map(str, coor))
+                            bbox_mess_ROC = ' '.join([class_name, score, xmin, ymin, xmax, ymax]) + '\n'
+                            f_ROC.write(bbox_mess_ROC)
                 if self.write_image:
-                    image = utils.draw_bbox(image, bboxes_pr, show_label=self.show_label)
-                    cv2.imwrite(self.write_image_path+image_name, image)
+                    image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
+                    im_path = os.path.join(self.write_image_path, 'reg', image_name)
+                    cv2.imwrite(im_path, image)
 
                 with open(predict_result_path, 'w') as f:
                     for bbox in bboxes_pr:

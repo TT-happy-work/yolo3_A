@@ -41,7 +41,6 @@ class YoloTrain(object):
         self.pruning_epoch_freq = cfg.TRAIN.PRUNING_EPOCH_FREQ
         # -nadav_wp_pruning
         self.warmup_periods = cfg.TRAIN.WARMUP_EPOCHS
-        self.initial_weight = cfg.TRAIN.INITIAL_WEIGHT
         self.chkpnt_to_restore = cfg.TRAIN.RESTORE_CHKPT
         self.time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
         self.moving_ave_decay = cfg.YOLO.MOVING_AVE_DECAY
@@ -52,7 +51,9 @@ class YoloTrain(object):
         self.steps_per_period = len(self.trainset)
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
+        self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT
+        self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
 
         with tf.name_scope('output_folder'):
             timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
@@ -138,7 +139,7 @@ class YoloTrain(object):
             variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
             self.loader = tf.train.Saver(variables_to_restore)
             # -nadav_wp_pruning
-            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+            self.saver = tf.train.Saver(tf.global_variables(), self.max_to_keep)
 
         with tf.name_scope('summary'):
             tf.summary.scalar("learn_rate", self.learn_rate)
@@ -167,7 +168,32 @@ class YoloTrain(object):
         self.sess.run(tf.global_variables_initializer())
         try:
             print('=> Restoring weights from: %s ... ' % self.chkpnt_to_restore)
-            self.loader.restore(self.sess, self.chkpnt_to_restore)
+            if self.upsample_method == 'resize':
+                # Load all from coco
+                self.loader.restore(self.sess, self.chkpnt_to_restore)
+
+            elif self.upsample_method == 'deconv':
+                # Load selectively from coco
+                layers_to_restore = self.net_var[0:297]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
+
+                print('Last restored layer is: %s' % self.net_var[297-1])
+                print('Next un-restored layer is: %s' % self.net_var[297])
+
+                layers_to_restore = self.net_var[300:336]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
+
+                print('Last restored layer is: %s' % self.net_var[336-1])
+                print('Next un-restored layer is: %s' % self.net_var[336])
+
+                layers_to_restore = self.net_var[339:371]
+                layer_to_restore = [v for v in layers_to_restore]
+                saver = tf.train.Saver(layer_to_restore)
+                saver.restore(self.sess, self.chkpnt_to_restore)
 
         except:
             print('=> %s does not exist !!!' % self.chkpnt_to_restore)
@@ -205,8 +231,8 @@ class YoloTrain(object):
                                                 self.trainable:    True
                 })
                 self.summary_writer_train.add_summary(summary, global_step_val)
+                train_epoch_loss.append(train_step_loss)
                 pbar.set_description("train loss: %.2f" %train_step_loss)
-
                 # # nadav_wp_pruning-
                 # # check inference time (of a batch)
                 # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
