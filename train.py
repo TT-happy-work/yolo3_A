@@ -52,6 +52,7 @@ class YoloTrain(object):
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
         self.fast_train          = cfg.TRAIN.FAST_TRAIN_NO_EVAL
+        self.be_reproducible     = cfg.TRAIN.BE_REPRODUCIBLE
         self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT
         self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
@@ -114,8 +115,12 @@ class YoloTrain(object):
                 if var_name_mess[0] in ['conv_sbbox', 'conv_mbbox', 'conv_lbbox']:
                     self.first_stage_trainable_var_list.append(var)
 
-            first_stage_optimizer = tf.train.AdamOptimizer(self.learn_rate).minimize(self.loss,
-                                                                                     var_list=self.first_stage_trainable_var_list)
+            optimizer = tf.train.AdamOptimizer(self.learn_rate)
+            if self.be_reproducible:
+                optimizer = tf.train.MomentumOptimizer(0, 0)
+
+            first_stage_optimizer = optimizer.minimize(self.loss, var_list=self.first_stage_trainable_var_list)
+
             with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
                 with tf.control_dependencies([first_stage_optimizer, global_step_update]):
                     with tf.control_dependencies([moving_ave]):
@@ -123,8 +128,12 @@ class YoloTrain(object):
 
         with tf.name_scope("define_second_stage_train"):
             second_stage_trainable_var_list = tf.trainable_variables()
-            second_stage_optimizer = tf.train.AdamOptimizer(self.learn_rate).minimize(self.loss,
-                                                                                      var_list=second_stage_trainable_var_list)
+
+            optimizer = tf.train.AdamOptimizer(self.learn_rate)
+            if self.be_reproducible:
+                optimizer = tf.train.MomentumOptimizer(0, 0)
+
+            second_stage_optimizer = optimizer.minimize(self.loss, var_list=second_stage_trainable_var_list)
 
             with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
                 with tf.control_dependencies([second_stage_optimizer, global_step_update]):
@@ -317,6 +326,7 @@ class YoloTrain(object):
                         self.summary_writer_test.add_summary(summary, global_step_val)
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
+            self.train_epoch_loss, self.test_epoch_loss = train_epoch_loss, test_epoch_loss
             ckpt_file = "/checkpoints/yolov3_epoch=%s_test_loss=%.4f.ckpt" % (epoch, test_epoch_loss)
             log_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             print("=> Epoch: %2d Time: %s Train loss: %.2f Test loss: %.2f Saving %s ..."

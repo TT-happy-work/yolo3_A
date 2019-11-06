@@ -40,6 +40,7 @@ __C.TRAIN.WARMUP_EPOCHS         = 2
 __C.TRAIN.FISRT_STAGE_EPOCHS    = 20
 __C.TRAIN.SECOND_STAGE_EPOCHS   = 150
 __C.TRAIN.FAST_TRAIN_NO_EVAL    = False
+__C.TRAIN.BE_REPRODUCIBLE       = False
 __C.TRAIN.WEIGHTED_LOSS         = True
 __C.TRAIN.WEIGHTED_LOSS_MAP     = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  # weight vector with length=number_of_classes
