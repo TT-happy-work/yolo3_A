@@ -15,7 +15,6 @@ np.random.seed(0)
 
 # is the class-specific confidence-threshold is going to be considered (True) or all predicions are going to be cosidered
 ROC_FLAG = False
-
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
@@ -292,12 +291,12 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
 tmp_files_path = "tmp_files"
 if not os.path.exists(tmp_files_path): # if it doesn't exist already
   os.makedirs(tmp_files_path)
-if not os.path.exists(tmp_files_path+'/gt'):
-  os.makedirs(tmp_files_path+'/gt')
-if not os.path.exists(tmp_files_path+'/reg'):
-  os.makedirs(tmp_files_path+'/reg')
-if not os.path.exists(tmp_files_path+'/ROC'):
-  os.makedirs(tmp_files_path+'/ROC')
+if not os.path.exists(os.path.join(tmp_files_path, 'gt')):
+  os.makedirs(os.path.join(tmp_files_path, 'gt'))
+if not os.path.exists(os.path.join(tmp_files_path, 'reg')):
+  os.makedirs(os.path.join(tmp_files_path, 'reg'))
+if not os.path.exists(os.path.join(tmp_files_path, 'ROC')):
+  os.makedirs(os.path.join(tmp_files_path, 'ROC'))
 if ROC_FLAG:
   results_files_path = 'results/ROC'
 else:
@@ -308,10 +307,10 @@ if os.path.exists(results_files_path): # if it exist already
 
 os.makedirs(results_files_path)
 if draw_plot:
-  os.makedirs(results_files_path + "/classes")
+  os.makedirs(os.path.join(results_files_path, "classes"))
 if show_animation:
-  os.makedirs(results_files_path + "/images")
-  os.makedirs(results_files_path + "/images/single_predictions")
+  os.makedirs(os.path.join(results_files_path, "images"))
+  os.makedirs(os.path.join(results_files_path, "images/single_predictions"))
 
 """
  Ground-Truth
@@ -349,7 +348,7 @@ for txt_file in ground_truth_files_list:
     file_id = file_id + '_ROC'
   # check if there is a correspondent predicted objects file
   if not os.path.exists(predicted_path + file_id + ".txt"):
-    error_msg = "Error. File not found: predicted/" + file_id + ".txt\n"
+    error_msg = "Error. File not found: %s/" + file_id + ".txt\n" % predicted_path
     error_msg += "(You can avoid this error message by running extra/intersect-gt-and-pred.py)"
     error(error_msg)
   lines_list = file_lines_to_list(txt_file)
@@ -777,7 +776,7 @@ for class_name in pred_classes:
 if draw_plot:
   fig = plt.figure(facecolor="white")
   window_title = "PD and FAR"
-  output_path = results_files_path + "/PD and FAR.png"
+  output_path = results_files_path + "/PD_and_FAR.png"
   # to_show = False
   classes = list(set().union(pred_classes, gt_classes))
   N = len(classes)
@@ -795,8 +794,6 @@ if draw_plot:
     FAR.append(clsFAR)
     CLS.append(cls)
   width = 0.85
-  # p1 = plt.bar(np.arange(N), PD, width, color=colors[0])
-  # p2 = plt.bar(np.arange(N), FAR, width, bottom=PD, color=colors[1])
   ax = fig.add_subplot(1, 1, 1)
   ax1 = ax.bar(np.arange(N), PD, width=width, label="PD  [TP/GT]", color="darkturquoise")
   ax2 = ax.bar(np.arange(N), FAR, bottom=PD, width=width, label="FAR [FP/PRED]", color="violet")
@@ -806,14 +803,20 @@ if draw_plot:
   plt.xticks(np.arange(N), CLS[:], rotation=90)
   # plt.xticks([])
   # plt.yticks(np.arange(0, 1.2, 5))
+  handles, labels = ax.get_legend_handles_labels()
+  # ax.legend(handles[::-1], labels[::-1], loc='best')
   ax.legend(loc='best')
   for i,cls in enumerate(CLS):
     pd_val = " " + '%.1f'%(PD[i]*100)+'%'
     far_val = pd_val + " " + '%.1f'%(FAR[i]*100)+'%'
     if PD[i]:
       # plt.text(i, PD[i]/2, '%0.1f'%(PD[i]*100)+'%'+'\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
-      plt.text(i, PD[i]/2, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
-      plt.text(i, PD[i]/2, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+      if i%2:
+        plt.text(i, 3*PD[i]/8, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
+        plt.text(i, 3*PD[i]/8, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+      else:
+        plt.text(i, 5*PD[i]/8, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
+        plt.text(i, 5*PD[i]/8, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
     if FAR[i]:
       # plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%'+'\n[%d/%d]'%(len(conf_F[cls]),pred_counter_per_class[cls]), va='center', fontweight='bold', color="darkorchid", fontsize=8) #FAR
       plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%', va='center', fontweight='bold', color="darkorchid", fontsize=10) #FAR

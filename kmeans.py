@@ -31,11 +31,9 @@ def iou(box, clusters):
     y = np.minimum(clusters[:, 1], box[1])
     if np.count_nonzero(x == 0) > 0 or np.count_nonzero(y == 0) > 0:
         raise ValueError("Box has no area")
-
     intersection = x * y
     box_area = box[0] * box[1]
     cluster_area = clusters[:, 0] * clusters[:, 1]
-
     iou_ = intersection / (box_area + cluster_area - intersection)
 
     return iou_
@@ -74,10 +72,7 @@ def kmeans(boxes, k, dist=np.median,seed=1):
             clusters[cluster] = dist(boxes[nearest_clusters == cluster], axis=0)
         last_clusters = nearest_clusters
 
-
     return clusters, nearest_clusters, distances
-
-
 
 def parse_anno(annotation_path):
     anno = open(annotation_path, 'r')
@@ -96,28 +91,6 @@ def parse_anno(annotation_path):
             result.append([width, height])
     result = np.asarray(result)
     return result
-
-
-
-# def parse_anno(annotation_path):
-#     anno = open(annotation_path, 'r')
-#     result = []
-#     for line in anno:
-#         s = line.strip().split(' ')
-#         image = cv2.imread(s[0])
-#         image_h, image_w = image.shape[:2]
-#         s = s[1:]
-#         box_cnt = len(s) // 5
-#         for i in range(box_cnt):
-#             ss=s[i].split(',')
-#
-#             x_min, y_min, x_max, y_max = float(ss[0]), float(ss[1]), float(ss[2]), float(ss[3])
-#             width  = (x_max - x_min) / image_w
-#             height = (y_max - y_min) / image_h
-#             result.append([width, height])
-#     result = np.asarray(result)
-#     return result
-
 
 def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
     for icluster in np.unique(nearest_clusters):
@@ -142,7 +115,7 @@ def plot_cluster_result(clusters,nearest_clusters,WithinClusterSumDist,wh,k):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_txt", type=str, default="/home/tamar/DBs/Reccelite/CroppedDB/croppedImgs_1_2_3_4_5_Th06_reg_rare.txt")
-    parser.add_argument("--anchors_txt", type=str, default="/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/anchors/anchors_1-5_cropped_keras.txt")
+    parser.add_argument("--anchors_txt", type=str, default="./data/anchors/anchors_1-5_cropped_keras.txt")
     parser.add_argument("--cluster_num", type=int, default=9)
     args = parser.parse_args()
     anno_result = parse_anno(args.dataset_txt)
@@ -162,5 +135,3 @@ if __name__ == '__main__':
         for i in range(args.cluster_num):
             width, height = clusters[i]
             f.writelines(str(width) + " " + str(height) + " ")
-
-    a=1

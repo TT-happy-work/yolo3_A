@@ -233,7 +233,6 @@ class YoloTrain(object):
                 self.summary_writer_train.add_summary(summary, global_step_val)
                 train_epoch_loss.append(train_step_loss)
                 pbar.set_description("train loss: %.2f" %train_step_loss)
-
                 # # nadav_wp_pruning-
                 # # check inference time (of a batch)
                 # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
