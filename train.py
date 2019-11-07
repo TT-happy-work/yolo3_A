@@ -30,12 +30,12 @@ from tensorflow.python.client import timeline
 
 class YoloTrain(object):
     def __init__(self):
-        self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
-        self.classes = utils.read_class_names(cfg.YOLO.CLASSES)
-        self.num_classes = len(self.classes)
-        self.learn_rate_init = cfg.TRAIN.LEARN_RATE_INIT
-        self.learn_rate_end = cfg.TRAIN.LEARN_RATE_END
-        self.first_stage_epochs = cfg.TRAIN.FISRT_STAGE_EPOCHS
+        self.anchor_per_scale    = cfg.YOLO.ANCHOR_PER_SCALE
+        self.classes             = utils.read_class_names(cfg.YOLO.CLASSES)
+        self.num_classes         = len(self.classes)
+        self.learn_rate_init     = cfg.TRAIN.LEARN_RATE_INIT
+        self.learn_rate_end      = cfg.TRAIN.LEARN_RATE_END
+        self.first_stage_epochs  = cfg.TRAIN.FISRT_STAGE_EPOCHS
         self.second_stage_epochs = cfg.TRAIN.SECOND_STAGE_EPOCHS
         # nadav_wp_pruning-
         self.pruning_epoch_freq = cfg.TRAIN.PRUNING_EPOCH_FREQ
@@ -66,20 +66,19 @@ class YoloTrain(object):
             if not os.path.exists(self.output_folder):
                 os.makedirs(self.output_folder)
             cfg_new_path = os.path.join(self.output_folder, 'configFile.txt')
-            shutil.copyfile('core/config.py', cfg_new_path)
+            shutil.copyfile('./core/config.py', cfg_new_path)
 
         with tf.name_scope('define_input'):
-            self.input_data = tf.placeholder(dtype=tf.float32, name='input_data')
-            self.label_sbbox = tf.placeholder(dtype=tf.float32, name='label_sbbox')
-            self.label_mbbox = tf.placeholder(dtype=tf.float32, name='label_mbbox')
-            self.label_lbbox = tf.placeholder(dtype=tf.float32, name='label_lbbox')
+            self.input_data   = tf.placeholder(dtype=tf.float32, name='input_data')
+            self.label_sbbox  = tf.placeholder(dtype=tf.float32, name='label_sbbox')
+            self.label_mbbox  = tf.placeholder(dtype=tf.float32, name='label_mbbox')
+            self.label_lbbox  = tf.placeholder(dtype=tf.float32, name='label_lbbox')
             self.true_sbboxes = tf.placeholder(dtype=tf.float32, name='sbboxes')
             self.true_mbboxes = tf.placeholder(dtype=tf.float32, name='mbboxes')
             self.true_lbboxes = tf.placeholder(dtype=tf.float32, name='lbboxes')
-            self.trainable = tf.placeholder(dtype=tf.bool, name='training')
+            self.trainable    = tf.placeholder(dtype=tf.bool, name='training')
 
         with tf.name_scope("define_loss"):
-
             self.model = YOLOV3(self.input_data, self.trainable)
             self.net_var = tf.global_variables()
             self.giou_loss, self.conf_loss, self.prob_loss = self.model.compute_loss(
