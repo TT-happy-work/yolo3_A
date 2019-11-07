@@ -28,6 +28,8 @@ class AugmentOffline(object):
 
         self.batch_size  = cfg.TRAIN.BATCH_SIZE
         self.data_aug    = cfg.TRAIN.DATA_AUG
+        self.aug_type    = cfg.TRAIN.AUG_TYPE
+        self.aug_path    = cfg.TRAIN.AUG_PATH
 
         self.strides = np.array(cfg.YOLO.STRIDES)
         self.classes = utils.read_class_names(cfg.YOLO.CLASSES)
@@ -49,9 +51,7 @@ class AugmentOffline(object):
             annotations = [line.strip() for line in txt if len(line.strip().split()[1:]) != 0]
         np.random.shuffle(annotations)
         counter = 0
-####MAYA
-#       print(annotations)
-####
+
         return annotations
 
     def __iter__(self):
@@ -86,10 +86,6 @@ class AugmentOffline(object):
                     image, bboxes = self.parse_annotation(annotation, self.counter)
                     label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes)
 
-                    ####MAYA
-#                    print(annotation)
-                    ####
-
                     batch_image[num, :, :, :] = image
                     batch_label_sbbox[num, :, :, :, :] = label_sbbox
                     batch_label_mbbox[num, :, :, :, :] = label_mbbox
@@ -100,17 +96,17 @@ class AugmentOffline(object):
                     num += 1
                 self.batch_count += 1
 
-                cv2.imwrite(('/home/mayarap/tamar_pc_DB/DBs/Reccelite/Tagging_1_2_img/%s_translate.jpg' % self.counter), image)
+                name = self.aug_type
+#                cv2.imwrite(('/home/mayarap/tamar_pc_DB/DBs/Reccelite/Tagging_1_2_img/%s_colors.jpg' % self.counter), image)
+                cv2.imwrite((self.aug_path + str(self.counter) + '_' + name + '.jpg'), image)
 
-                bboxes_to_print = ' '.join(map(str, bboxes.tolist())).replace("[", "").replace("]", "").replace("\n", "").replace(".0 "," ")
-                #print("bboxes_to_print = ", bboxes_to_print)
+                bboxes_to_print = ' '.join(map(str, bboxes.tolist())).replace("[", "").replace("]", "").replace("\n", "").replace(".0 "," ").replace(", ",",")
 
-                with open('/home/mayarap/tamar_pc_DB/DBs/Reccelite/Tagging_1_2_img/bboxes_translate.txt', 'ab') as f:
-                    f.write(('/home/mayarap/tamar_pc_DB/DBs/Reccelite/Tagging_1_2_img/%s_translate.jpg ' % self.counter).encode())
+                with open((self.aug_path + '/bboxes_' + name + '.txt'), 'ab') as f:
+                    f.write((self.aug_path + str(self.counter) + '_' + name + '.jpg ').encode())
                     f.write(bboxes_to_print.encode())
                     f.write("\n".encode())
                     f.close()
-                    #f.write(bboxes)
 
                 if self.counter==85:
                     exit()
@@ -125,30 +121,32 @@ class AugmentOffline(object):
 
         _, w, _ = image.shape
         image = image[:, ::-1, :]
+        image = image[:, :, ::-1]
         bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
 
         return image, bboxes
 
     def random_crop(self, image, bboxes):
 
-        if random.random() < 0.5:
-            h, w, _ = image.shape
-            max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
+#        if random.random() < 0.5:
+        h, w, _ = image.shape
+        max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
 
-            max_l_trans = max_bbox[0]
-            max_u_trans = max_bbox[1]
-            max_r_trans = w - max_bbox[2]
-            max_d_trans = h - max_bbox[3]
+        max_l_trans = max_bbox[0]
+        max_u_trans = max_bbox[1]
+        max_r_trans = w - max_bbox[2]
+        max_d_trans = h - max_bbox[3]
 
-            crop_xmin = max(0, int(max_bbox[0] - random.uniform(0, max_l_trans)))
-            crop_ymin = max(0, int(max_bbox[1] - random.uniform(0, max_u_trans)))
-            crop_xmax = max(w, int(max_bbox[2] + random.uniform(0, max_r_trans)))
-            crop_ymax = max(h, int(max_bbox[3] + random.uniform(0, max_d_trans)))
+        crop_xmin = max(0, int(max_bbox[0] - random.uniform(0, max_l_trans)))
+        crop_ymin = max(0, int(max_bbox[1] - random.uniform(0, max_u_trans)))
+        crop_xmax = max(w, int(max_bbox[2] + random.uniform(0, max_r_trans)))
+        crop_ymax = max(h, int(max_bbox[3] + random.uniform(0, max_d_trans)))
 
-            image = image[crop_ymin : crop_ymax, crop_xmin : crop_xmax]
+        image = image[crop_ymin : crop_ymax, crop_xmin : crop_xmax]
+        image = image[:, :, ::-1]
 
-            bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_xmin
-            bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_ymin
+        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_xmin
+        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_ymin
 
         return image, bboxes
 
@@ -168,13 +166,23 @@ class AugmentOffline(object):
 
             M = np.array([[1, 0, tx], [0, 1, ty]])
             image = cv2.warpAffine(image, M, (w, h))
+            image = image[:, :, ::-1]
 
             bboxes[:, [0, 2]] = bboxes[:, [0, 2]] + tx
             bboxes[:, [1, 3]] = bboxes[:, [1, 3]] + ty
 
         return image, bboxes
 
+    def swap_colors(self, image, bboxes):
+        col0 = image[:, :, 0].copy()
+        col1 = image[:, :, 1].copy()
+        col2 = image[:, :, 2].copy()
 
+        image[:, :, 0] = col1
+        image[:, :, 1] = col2
+        image[:, :, 2] = col0
+
+        return image, bboxes
 
     def parse_annotation(self, annotation, counter):
 
@@ -186,9 +194,16 @@ class AugmentOffline(object):
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
 
         if self.data_aug:
-        ##    image, bboxes = self.horizontal_flip(np.copy(image), np.copy(bboxes))
-        ##    image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
-           image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+            if self.aug_type == 'flip':
+                image, bboxes = self.horizontal_flip(np.copy(image), np.copy(bboxes))
+            elif self.aug_type == 'crop':
+                image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
+            elif self.aug_type == 'translate':
+                image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+            elif self.aug_type == 'color':
+                image, bboxes = self.swap_colors(np.copy(image), np.copy(bboxes))
+            else:
+                raise ValueError("Wrong AUG_TYPE. Options are: 'flip', 'crop', 'translate', 'color'")
         ####    image, bboxes = self.random_noise(np.copy(image), np.copy(bboxes))
 
         image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))

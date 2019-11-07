@@ -57,7 +57,6 @@ class AugmentationsOffline(object):
             if not os.path.exists(self.output_folder):
                 os.makedirs(self.output_folder)
             cfg_new_path = os.path.join(self.output_folder, 'configFile.txt')
-####            shutil.copyfile('/home/tamar/RecceLite_code_packages/yolo3_baseline2/core/config.py', cfg_new_path)
             shutil.copyfile('./core/config.py', cfg_new_path)
 
         with tf.name_scope('define_input'):
