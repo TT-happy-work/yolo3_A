@@ -142,11 +142,12 @@ class YoloTrain(object):
 
         with tf.name_scope('loader_and_saver'):
             # nadav_wp_pruning-
-            # self.net_var = tf.global_variables()  # net variables in graph
-            ckpt_net_var = [tup[0] for tup in
-                            tf.train.list_variables(self.chkpnt_to_restore)]  # net variables in checkpoint
-            # restore only variables that exist both in the ckpt and the graph
-            variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
+            variables_to_restore = self.net_var
+            if os.path.exists(self.chkpnt_to_restore):
+                # net variables in checkpoint:
+                ckpt_net_var = [tup[0] for tup in tf.train.list_variables(self.chkpnt_to_restore)]
+                # restore only variables that exist both in the ckpt and the graph
+                variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
             self.loader = tf.train.Saver(variables_to_restore)
             # -nadav_wp_pruning
             self.saver = tf.train.Saver(tf.global_variables(), self.max_to_keep)
