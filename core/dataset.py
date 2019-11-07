@@ -53,6 +53,8 @@ class Dataset(object):
                 home_dir = ''
             # If user or $HOME is unknown, do nothing
             annotations = [os.path.join(home_dir,line.strip()) for line in txt if len(line.strip().split()[1:]) != 0]
+            # discard references to non-existing files:
+            annotations = [a for a in annotations if os.path.isfile(a.split()[0].strip())]
         np.random.shuffle(annotations)
         return annotations
 
