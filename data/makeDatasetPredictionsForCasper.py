@@ -36,14 +36,11 @@ def order_points(pts):
 
 
 if __name__ == '__main__':
-    home_dir = os.path.expanduser('~')
-    if home_dir == '~':
-        home_dir = ''
-    mainDbFolder = os.path.join(home_dir, 'DBs/Reccelite/Tagging1/')
+    mainDbFolder = '/home/tamar/DBs/Reccelite/Tagging1/'
     subFolderList = os.listdir(mainDbFolder)
     allImgs = []; # list of Img-dictionaries. each dict is the complete info of an img.
     annomal = []; # keep track of all sorts of problems
-    labelsFile = './data/classes/recce.names' # extract labels dict from recce_names file
+    labelsFile = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/classes/recce.names' # extract labels dict from recce_names file
     with open(labelsFile, 'r') as f:
         labels = {}
         for i, tar in enumerate(f):
@@ -116,7 +113,7 @@ if __name__ == '__main__':
         allImgs.append(singleImage_dict)
 
     ## Write contents of dictionary allImgs into recce_dataset.txt as required by k-means
-    fout = './data/recce_data.txt'
+    fout = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data.txt'
     f = open(fout, "w")
     for imgIdx in range(len(allImgs)):
         f.write('\n' + allImgs[imgIdx]['imagePath'] + ' ') # write to file the image Name, after which will foloow all info of all tars in img.
@@ -162,7 +159,7 @@ if __name__ == '__main__':
         #img.close()
     f.close()
     ## Record in file the collected annomalities
-    annomalitiesFile = './data/annomalities.txt'
+    annomalitiesFile = '/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/annomalities.txt'
     annoF = open(annomalitiesFile, "w")
     for ann in annomal:
         annoF.write('\n ----------------------- \nImage Path:' + ann['Img'] + '; \nThe Problem: ' + ann['Problem'] + '; \nthe Target ID: ' + ann['tarID'])

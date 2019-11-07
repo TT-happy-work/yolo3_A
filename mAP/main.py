@@ -13,6 +13,8 @@ import random
 random.seed(0)
 np.random.seed(0)
 
+# is the class-specific confidence-threshold is going to be considered (True) or all predicions are going to be cosidered
+ROC_FLAG = False
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
@@ -34,7 +36,11 @@ if args.set_class_iou is not None:
   specific_iou_flagged = True
 
 # if there are no images then no animation can be shown
-img_path = '/home/tamar/DBs/Reccelite/Tagging_1_2_img' #'images'
+home_dir = os.path.expanduser('~')
+if home_dir == '~':
+  home_dir = ''
+# If user or $HOME is unknown, do nothing
+img_path = os.path.join(home_dir, 'DBs/Reccelite/Tagging_1_2_img') #'images'
 if os.path.exists(img_path): 
   for dirpath, dirnames, files in os.walk(img_path):
     if not files:
@@ -201,7 +207,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
       fp_sorted.append(dictionary[key] - true_p_bar[key])
       tp_sorted.append(true_p_bar[key])
       gt_sorted.append(gt_counter_per_class[key])
-    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='True Predictions')
+    plt.barh(range(n_classes), gt_sorted, align='center', color='forestgreen', label='Ground Truth')
     plt.barh(range(n_classes), list(np.array(gt_sorted)-np.array(tp_sorted)), align='center', color='orange', label='Mis-Detections', left=gt_sorted)
     plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Predictions', left=list(2*np.array(gt_sorted)-np.array(tp_sorted)))
     # add legend
@@ -285,17 +291,26 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
 tmp_files_path = "tmp_files"
 if not os.path.exists(tmp_files_path): # if it doesn't exist already
   os.makedirs(tmp_files_path)
-results_files_path = "results"
+if not os.path.exists(os.path.join(tmp_files_path, 'gt')):
+  os.makedirs(os.path.join(tmp_files_path, 'gt'))
+if not os.path.exists(os.path.join(tmp_files_path, 'reg')):
+  os.makedirs(os.path.join(tmp_files_path, 'reg'))
+if not os.path.exists(os.path.join(tmp_files_path, 'ROC')):
+  os.makedirs(os.path.join(tmp_files_path, 'ROC'))
+if ROC_FLAG:
+  results_files_path = 'results/ROC'
+else:
+  results_files_path = 'results/reg'
 if os.path.exists(results_files_path): # if it exist already
   # reset the results directory
   shutil.rmtree(results_files_path)
 
 os.makedirs(results_files_path)
 if draw_plot:
-  os.makedirs(results_files_path + "/classes")
+  os.makedirs(os.path.join(results_files_path, "classes"))
 if show_animation:
-  os.makedirs(results_files_path + "/images")
-  os.makedirs(results_files_path + "/images/single_predictions")
+  os.makedirs(os.path.join(results_files_path, "images"))
+  os.makedirs(os.path.join(results_files_path, "images/single_predictions"))
 
 """
  Ground-Truth
@@ -310,13 +325,30 @@ ground_truth_files_list.sort()
 # dictionary with counter per class
 gt_counter_per_class = {}
 
+# get a list with the predicted files
+predicted_reg_files_list = glob.glob('predicted/reg/*.txt')
+predicted_reg_files_list.sort()
+
+predicted_ROC_files_list = glob.glob('predicted/ROC/*.txt')
+predicted_ROC_files_list.sort()
+
+if ROC_FLAG:
+    predicted_path = 'predicted/ROC/'
+    predicted_files_list = predicted_ROC_files_list
+else:
+    predicted_path = 'predicted/reg/'
+    predicted_files_list = predicted_reg_files_list
+
+
 for txt_file in ground_truth_files_list:
   #print(txt_file)
   file_id = txt_file.split(".txt",1)[0]
   file_id = os.path.basename(os.path.normpath(file_id))
+  if ROC_FLAG:
+    file_id = file_id + '_ROC'
   # check if there is a correspondent predicted objects file
-  if not os.path.exists('predicted/' + file_id + ".txt"):
-    error_msg = "Error. File not found: predicted/" +  file_id + ".txt\n"
+  if not os.path.exists(predicted_path + file_id + ".txt"):
+    error_msg = "Error. File not found: %s/" + file_id + ".txt\n" % predicted_path
     error_msg += "(You can avoid this error message by running extra/intersect-gt-and-pred.py)"
     error(error_msg)
   lines_list = file_lines_to_list(txt_file)
@@ -353,7 +385,7 @@ for txt_file in ground_truth_files_list:
           # if class didn't exist yet
           gt_counter_per_class[class_name] = 1
   # dump bounding_boxes into a ".json" file
-  with open(tmp_files_path + "/" + file_id + "_ground_truth.json", 'w') as outfile:
+  with open(tmp_files_path + "/gt/" + file_id.split('_ROC')[0] + "_ground_truth.json", 'w') as outfile:
     json.dump(bounding_boxes, outfile)
 
 gt_classes = list(gt_counter_per_class.keys())
@@ -391,9 +423,6 @@ if specific_iou_flagged:
  Predicted
    Load each of the predicted files into a temporary ".json" file.
 """
-# get a list with the predicted files
-predicted_files_list = glob.glob('predicted/*.txt')
-predicted_files_list.sort()
 
 for class_index, class_name in enumerate(gt_classes):
   bounding_boxes = []
@@ -402,6 +431,7 @@ for class_index, class_name in enumerate(gt_classes):
     # the first time it checks if all the corresponding ground-truth files exist
     file_id = txt_file.split(".txt",1)[0]
     file_id = os.path.basename(os.path.normpath(file_id))
+    file_id = file_id.split('_ROC')[0]
     if class_index == 0:
       if not os.path.exists('ground-truth/' + file_id + ".txt"):
         error_msg = "Error. File not found: ground-truth/" +  file_id + ".txt\n"
@@ -423,8 +453,12 @@ for class_index, class_name in enumerate(gt_classes):
         #print(bounding_boxes)
   # sort predictions by decreasing confidence
   bounding_boxes.sort(key=lambda x:float(x['confidence']), reverse=True)
-  with open(tmp_files_path + "/" + class_name + "_predictions.json", 'w') as outfile:
-    json.dump(bounding_boxes, outfile)
+  if ROC_FLAG:
+    with open(tmp_files_path + "/ROC/" + class_name + "_predictions.json", 'w') as outfile:
+      json.dump(bounding_boxes, outfile)
+  else:
+    with open(tmp_files_path + "/reg/" + class_name + "_predictions.json", 'w') as outfile:
+      json.dump(bounding_boxes, outfile)
 
 """
  Calculate the AP for each class
@@ -442,7 +476,10 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
     """
      Load predictions of that class
     """
-    predictions_file = tmp_files_path + "/" + class_name + "_predictions.json"
+    if ROC_FLAG:
+      predictions_file = tmp_files_path + "/ROC/" + class_name + "_predictions.json"
+    else:
+      predictions_file = tmp_files_path + "/reg/" + class_name + "_predictions.json"
     predictions_data = json.load(open(predictions_file))
 
     """
@@ -478,7 +515,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
           img = cv2.copyMakeBorder(img, 0, bottom_border, 0, 0, cv2.BORDER_CONSTANT, value=BLACK)
       # assign prediction to ground truth object if any
       #   open ground-truth with that file_id
-      gt_file = tmp_files_path + "/" + file_id + "_ground_truth.json"
+      gt_file = tmp_files_path + "/gt/" + file_id + "_ground_truth.json"
       ground_truth_data = json.load(open(gt_file))
       ovmax = -1
       gt_match = -1
@@ -730,6 +767,83 @@ for class_name in pred_classes:
     count_true_positives[class_name] = 0
 #print(count_true_positives)
 
+
+"""
+  Plot the statics of FAR and PD
+  PD  = TP[cls]/GT[cls]
+  FAR = FP[cls]/pred[cls]
+"""
+if draw_plot:
+  fig = plt.figure(facecolor="white")
+  window_title = "PD and FAR"
+  output_path = results_files_path + "/PD_and_FAR.png"
+  # to_show = False
+  classes = list(set().union(pred_classes, gt_classes))
+  N = len(classes)
+  # colors = plt.cm.BuPu(np.linspace(0.8, 0.5, 2)) # 2 is the number of data-type per each class (1.PD 2.FAR)
+  colors = []; colors.append('darkturquoise'); colors.append('violet')
+  PD = []; FAR = []; CLS = []
+  for cls in classes:
+    if cls not in pred_classes:
+      clsPD = 0
+      clsFAR = 0
+    else:
+      clsPD = len(conf_T[cls])/ gt_counter_per_class[cls]
+      clsFAR = len(conf_F[cls]) / pred_counter_per_class[cls]
+    PD.append(clsPD)
+    FAR.append(clsFAR)
+    CLS.append(cls)
+  width = 0.85
+  ax = fig.add_subplot(1, 1, 1)
+  ax1 = ax.bar(np.arange(N), PD, width=width, label="PD  [TP/GT]", color="darkturquoise")
+  ax2 = ax.bar(np.arange(N), FAR, bottom=PD, width=width, label="FAR [FP/PRED]", color="violet")
+
+  ax.set_ylabel('Statistics')
+  ax.set_title('PD and FAR Statistics per class')
+  plt.xticks(np.arange(N), CLS[:], rotation=90)
+  # plt.xticks([])
+  # plt.yticks(np.arange(0, 1.2, 5))
+  handles, labels = ax.get_legend_handles_labels()
+  # ax.legend(handles[::-1], labels[::-1], loc='best')
+  ax.legend(loc='best')
+  for i,cls in enumerate(CLS):
+    pd_val = " " + '%.1f'%(PD[i]*100)+'%'
+    far_val = pd_val + " " + '%.1f'%(FAR[i]*100)+'%'
+    if PD[i]:
+      # plt.text(i, PD[i]/2, '%0.1f'%(PD[i]*100)+'%'+'\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+      if i%2:
+        plt.text(i, 3*PD[i]/8, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
+        plt.text(i, 3*PD[i]/8, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+      else:
+        plt.text(i, 5*PD[i]/8, '%0.1f'%(PD[i]*100)+'%', ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=10) #PD
+        plt.text(i, 5*PD[i]/8, '\n\n[%d/%d]'%(len(conf_T[cls]),gt_counter_per_class[cls]), ha="center", va='center', fontweight='bold', color="darkcyan", fontsize=8) #PD
+    if FAR[i]:
+      # plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%'+'\n[%d/%d]'%(len(conf_F[cls]),pred_counter_per_class[cls]), va='center', fontweight='bold', color="darkorchid", fontsize=8) #FAR
+      plt.text(i-0.4, PD[i]+FAR[i]/2, '%0.1f'%(FAR[i]*100)+'%', va='center', fontweight='bold', color="darkorchid", fontsize=10) #FAR
+      plt.text(i-0.4, PD[i]+FAR[i]/2, '\n\n[%d/%d]'%(len(conf_F[cls]),pred_counter_per_class[cls]), va='center', fontweight='bold', color="darkorchid", fontsize=8) #FAR
+
+    # plt.text(r1.get_x() + r1.get_width() / 2., h1 / 2., "%d" % h1, ha="center", va="center", color="navy", fontsize=8,
+    #          fontweight="bold")
+    # plt.text(r2.get_x() + r2.get_width() / 2., h1 + h2 / 2., "%d" % h2, ha="center", va="center", color="navy",
+    #          fontsize=8, fontweight="bold")
+  # Add a table at the bottom of the axes
+  # colors = colors[::-1]
+  # cell_text = []
+  # cell_text.append(FAR)
+  # cell_text.append(PD)
+  # the_table = plt.table(cellText=cell_text,
+  #                        rowLabels=['FAR', 'PD'],
+  #                        rowColours=colors,
+  #                        colLabels=CLS[:],
+  #                        fontsize=8,
+  #                        loc='bottom')
+  # plt.subplots_adjust(left=0.1, bottom=0.1)
+  plt.tight_layout()
+  plt.show()
+  fig.savefig(output_path)
+
+
+
 """
  Plot the total number of occurences of each class in the "predicted" folder
  Plot the amount of true/false positives Vs. Confidence - per class and total
@@ -765,7 +879,7 @@ if draw_plot:
     if len(conf_T[cls] + conf_T[cls]) == 0: continue
     output_path = results_files_path + "/Confidence reliability of " + cls + ".png"
     #fig, ax = plt.subplots()
-    n_equal_bins = max(len(conf_T[cls] + conf_T[cls]), int(len(conf_T[cls] + conf_T[cls])/15))
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
     print(n_equal_bins)
     opacity = 0.75
     plt.hist(conf_T[cls], n_equal_bins, alpha=opacity, color='g', label='True Predictions')
@@ -785,6 +899,25 @@ if draw_plot:
     plt.savefig(output_path)
     #plt.show()
 
+  # plot FA vs. Confidence
+    if len(conf_T[cls] + conf_F[cls]) == 0: continue
+    output_path = results_files_path + "/FA vs Confidence of " + cls + ".png"
+    n_equal_bins = max(len(conf_T[cls] + conf_F[cls]), int(len(conf_T[cls] + conf_F[cls])/15))
+    plt.figure()
+    plt.hist(conf_F[cls], n_equal_bins, alpha=opacity, color='r', label='False Predictions')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Confidence', fontsize='large')
+    plt.ylabel('FA', fontsize='large')
+    plot_title = "FA vs. Confidence\n"
+    plot_title += str(pred_counter_per_class[cls]) + " predictions, "
+    plot_title += "Class " + cls
+    plt.title(plot_title, fontsize=14)
+    plt.xlim(0, 1)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    plt.tight_layout()
+    plt.savefig(output_path)
 
 """
  Write number of predicted objects per class to results.txt
@@ -802,6 +935,7 @@ with open(results_files_path + "/results.txt", 'a') as results_file:
  Draw mAP plot (Show AP's of all classes in decreasing order)
 """
 if draw_plot:
+  plt.figure()
   window_title = "mAP"
   plot_title = "mAP = {0:.2f}%".format(mAP*100)
   x_label = "Average Precision"

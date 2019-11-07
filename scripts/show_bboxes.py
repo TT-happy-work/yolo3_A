@@ -15,18 +15,21 @@ import cv2
 import numpy as np
 from PIL import Image
 
-ID = 1
-label_txt = "/home/tamar/RecceLite_code_packages/yolo3_baseline2/data/recce_data.txt"
-image_info = open(label_txt).readlines()[ID].split()
 
-image_path = image_info[0]
-image = cv2.imread(image_path)
-for bbox in image_info[1:]:
-    bbox = bbox.split(",")
-    image = cv2.rectangle(image,(int(float(bbox[0])),
-                                 int(float(bbox[1]))),
-                                (int(float(bbox[2])),
-                                 int(float(bbox[3]))), (255,0,0), 2)
+label_txt = "./data/recce_data.txt"
+num_imgs = len(open(label_txt).readlines())
 
-image = Image.fromarray(np.uint8(image))
-image.show()
+for img_ind in range(num_imgs):
+    image_info = open(label_txt).readlines()[img_ind].split()
+    image_path = image_info[0]
+    image = cv2.imread(image_path)
+    for bbox in image_info[1:]:
+        bbox = bbox.split(",")
+        image = cv2.rectangle(image,(int(float(bbox[0])),
+                                    int(float(bbox[1]))),
+                                    (int(float(bbox[2])),
+                                  int(float(bbox[3]))), (255,0,0), 2)
+
+    image = Image.fromarray(np.uint8(image))
+    print(image_path.split('/')[-1])
+    image.show()
