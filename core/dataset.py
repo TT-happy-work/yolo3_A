@@ -46,7 +46,6 @@ class Dataset(object):
 
 
     def load_annotations(self, dataset_type):
-        np.random.seed(0)
         with open(self.annot_path, 'r') as f:
             txt = f.readlines()
             home_dir = os.path.expanduser('~')
@@ -54,6 +53,10 @@ class Dataset(object):
                 home_dir = ''
             # If user or $HOME is unknown, do nothing
             annotations = [os.path.join(home_dir,line.strip()) for line in txt if len(line.strip().split()[1:]) != 0]
+            # discard references to non-existing files:
+            annotations = [a for a in annotations if os.path.isfile(a.split()[0].strip())]
+            if annotations == []:
+                raise("Error: no annotations (or no images) found on file %s" % self.annot_path)
         np.random.shuffle(annotations)
         return annotations
 

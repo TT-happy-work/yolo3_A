@@ -33,7 +33,7 @@ class YoloTest(object):
         self.iou_threshold     = cfg.TEST.IOU_THRESHOLD
         self.moving_ave_decay  = cfg.YOLO.MOVING_AVE_DECAY
         self.annotation_path   = cfg.TEST.ANNOT_PATH
-        self.weight_file       = cfg.TEST.WEIGHT_FILE
+        self.weight_file       = utils.get_checkpoint_file_path()
         self.write_image       = cfg.TEST.WRITE_IMAGE
         self.write_image_path  = cfg.TEST.WRITE_IMAGE_PATH
         self.show_label        = cfg.TEST.SHOW_LABEL
@@ -137,7 +137,7 @@ class YoloTest(object):
                         if box_conf >= specifc_conf[self.classes[box_clss]]:
                             bboxes_pr_ROC.append(bboxes_pr[box_ind])
                     if self.write_image:
-                        image_ROC = utils.draw_bbox(image * 255, bboxes_pr_ROC, show_label=self.show_label)
+                        image_ROC = utils.draw_bbox(image * 255, bboxes_pr_ROC, self.classes, show_label=self.show_label)
                         im_path = os.path.join(self.write_image_path,'ROC', image_name + '_ROC')
                         cv2.imwrite(im_path, image_ROC)
                     predict_result__ROC_path = os.path.join(predicted_dir_path, ROC_folder, image_name.split('.')[0] + '_ROC.txt')
@@ -152,7 +152,7 @@ class YoloTest(object):
                             bbox_mess_ROC = ' '.join([class_name, score, xmin, ymin, xmax, ymax]) + '\n'
                             f_ROC.write(bbox_mess_ROC)
                 if self.write_image:
-                    image = utils.draw_bbox(image*255, bboxes_pr, show_label=self.show_label)
+                    image = utils.draw_bbox(image*255, bboxes_pr, self.classes, show_label=self.show_label)
                     im_path = os.path.join(self.write_image_path, 'reg', image_name)
                     cv2.imwrite(im_path, image)
 

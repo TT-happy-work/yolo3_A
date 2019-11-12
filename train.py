@@ -51,12 +51,14 @@ class YoloTrain(object):
         self.steps_per_period = len(self.trainset)
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
+        self.fast_train          = cfg.TRAIN.FAST_TRAIN_NO_TEST
+        self.be_reproducible     = cfg.TRAIN.BE_REPRODUCIBLE
         self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT
         self.max_to_keep = cfg.TRAIN.MAX_TO_KEEP
 
         with tf.name_scope('output_folder'):
-            timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
+            timestr = datetime.datetime.now().strftime('%Y%m%d_%H%M')
             for i in range(0, len(sp.getstatusoutput('git branch')[1].split())):
                 if sp.getstatusoutput('git branch')[1].split()[i] == '*':
                     gitBranch = sp.getstatusoutput('git branch')[1].split()[i + 1]
@@ -113,8 +115,12 @@ class YoloTrain(object):
                 if var_name_mess[0] in ['conv_sbbox', 'conv_mbbox', 'conv_lbbox']:
                     self.first_stage_trainable_var_list.append(var)
 
-            first_stage_optimizer = tf.train.AdamOptimizer(self.learn_rate).minimize(self.loss,
-                                                                                     var_list=self.first_stage_trainable_var_list)
+            optimizer = tf.train.AdamOptimizer(self.learn_rate)
+            if self.be_reproducible:
+                optimizer = tf.train.MomentumOptimizer(0, 0)
+
+            first_stage_optimizer = optimizer.minimize(self.loss, var_list=self.first_stage_trainable_var_list)
+
             with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
                 with tf.control_dependencies([first_stage_optimizer, global_step_update]):
                     with tf.control_dependencies([moving_ave]):
@@ -122,8 +128,12 @@ class YoloTrain(object):
 
         with tf.name_scope("define_second_stage_train"):
             second_stage_trainable_var_list = tf.trainable_variables()
-            second_stage_optimizer = tf.train.AdamOptimizer(self.learn_rate).minimize(self.loss,
-                                                                                      var_list=second_stage_trainable_var_list)
+
+            optimizer = tf.train.AdamOptimizer(self.learn_rate)
+            if self.be_reproducible:
+                optimizer = tf.train.MomentumOptimizer(0, 0)
+
+            second_stage_optimizer = optimizer.minimize(self.loss, var_list=second_stage_trainable_var_list)
 
             with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
                 with tf.control_dependencies([second_stage_optimizer, global_step_update]):
@@ -132,11 +142,12 @@ class YoloTrain(object):
 
         with tf.name_scope('loader_and_saver'):
             # nadav_wp_pruning-
-            # self.net_var = tf.global_variables()  # net variables in graph
-            ckpt_net_var = [tup[0] for tup in
-                            tf.train.list_variables(self.chkpnt_to_restore)]  # net variables in checkpoint
-            # restore only variables that exist both in the ckpt and the graph
-            variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
+            variables_to_restore = self.net_var
+            if os.path.exists(self.chkpnt_to_restore):
+                # net variables in checkpoint:
+                ckpt_net_var = [tup[0] for tup in tf.train.list_variables(self.chkpnt_to_restore)]
+                # restore only variables that exist both in the ckpt and the graph
+                variables_to_restore = [var for var in self.net_var if var.name.split(':')[0] in ckpt_net_var]
             self.loader = tf.train.Saver(variables_to_restore)
             # -nadav_wp_pruning
             self.saver = tf.train.Saver(tf.global_variables(), self.max_to_keep)
@@ -208,6 +219,8 @@ class YoloTrain(object):
 
             pbar = tqdm(self.trainset)
             train_epoch_loss, test_epoch_loss = [], []
+            if self.fast_train:
+                test_epoch_loss = train_epoch_loss
 
             j = (epoch - 1) * 85
 
@@ -292,27 +305,29 @@ class YoloTrain(object):
                 # # conv 1, conv 4, conv 9, conv 26, conv 43 -> all conv layers in darknet
                 # # -nadav_wp_pruning
 
-            for test_data in self.testset:
-                if self.data_format == "NCHW":
-                    input_data = test_data[0].transpose([0, 3, 1, 2])  # switch from NHWC to NCHW
-                else:
-                    input_data = test_data[0]
+            if not self.fast_train:
+                for test_data in self.testset:
+                    if self.data_format == "NCHW":
+                        input_data = test_data[0].transpose([0, 3, 1, 2])  # switch from NHWC to NCHW
+                    else:
+                        input_data = test_data[0]
 
-                summary, test_step_loss = self.sess.run(
-                    [self.write_op, self.loss], feed_dict={
-                        self.input_data: input_data,
-                        self.label_sbbox: test_data[1],
-                        self.label_mbbox: test_data[2],
-                        self.label_lbbox: test_data[3],
-                        self.true_sbboxes: test_data[4],
-                        self.true_mbboxes: test_data[5],
-                        self.true_lbboxes: test_data[6],
-                        self.trainable: False,
-                    })
-                test_epoch_loss.append(test_step_loss)
-                self.summary_writer_test.add_summary(summary, global_step_val)
+                        summary, test_step_loss = self.sess.run(
+                            [self.write_op, self.loss], feed_dict={
+                            self.input_data: input_data,
+                            self.label_sbbox: test_data[1],
+                            self.label_mbbox: test_data[2],
+                            self.label_lbbox: test_data[3],
+                            self.true_sbboxes: test_data[4],
+                            self.true_mbboxes: test_data[5],
+                            self.true_lbboxes: test_data[6],
+                            self.trainable: False,
+                        })
+                        test_epoch_loss.append(test_step_loss)
+                        self.summary_writer_test.add_summary(summary, global_step_val)
 
             train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
+            self.train_epoch_loss, self.test_epoch_loss = train_epoch_loss, test_epoch_loss
             ckpt_file = "/checkpoints/yolov3_epoch=%s_test_loss=%.4f.ckpt" % (epoch, test_epoch_loss)
             log_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             print("=> Epoch: %2d Time: %s Train loss: %.2f Test loss: %.2f Saving %s ..."
