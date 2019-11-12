@@ -51,7 +51,7 @@ class YoloTrain(object):
         self.steps_per_period = len(self.trainset)
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         self.folder_name = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
-        self.fast_train          = cfg.TRAIN.FAST_TRAIN_NO_EVAL
+        self.fast_train          = cfg.TRAIN.FAST_TRAIN_NO_TEST
         self.be_reproducible     = cfg.TRAIN.BE_REPRODUCIBLE
         self.upsample_method     = cfg.YOLO.UPSAMPLE_METHOD
         self.data_format = cfg.YOLO.DATA_FORMAT

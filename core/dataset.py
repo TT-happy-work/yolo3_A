@@ -55,6 +55,8 @@ class Dataset(object):
             annotations = [os.path.join(home_dir,line.strip()) for line in txt if len(line.strip().split()[1:]) != 0]
             # discard references to non-existing files:
             annotations = [a for a in annotations if os.path.isfile(a.split()[0].strip())]
+            if annotations == []:
+                raise("Error: no annotations (or no images) found on file %s" % self.annot_path)
         np.random.shuffle(annotations)
         return annotations
 
