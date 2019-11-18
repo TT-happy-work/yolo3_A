@@ -40,7 +40,7 @@ def query_yes_no(question, default="yes"):
     if sys.version_info[0] == 3:
       choice = input().lower() # if version 3 of Python
     else:
-      choice = raw_input().lower()
+      choice = raw_input().lower()  # noqa: F821
     if default is not None and choice == '':
       return valid[default]
     elif choice in valid:
