@@ -357,4 +357,6 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_h, input_w, score_threshol
     return np.concatenate([coors, scores[:, np.newaxis], classes[:, np.newaxis]], axis=-1)
 
 
-
+def modify_config_for_tensorrt():
+    cfg.YOLO.UPSAMPLE_METHOD = 'deconv'
+    cfg.YOLO.USE_FUSED_BN = False

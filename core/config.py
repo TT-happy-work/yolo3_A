@@ -24,6 +24,7 @@ __C.YOLO.IMAGE_HANDLE           = 'crop'  # 'crop' or 'scale'
 __C.YOLO.DATA_FORMAT            = 'NHWC'  # 'NCHW'(=opt for RT) or 'NHWC'(=default) (N-batch size, C-channels, H-height, W-width)
 __C.YOLO.EPILOG_LOGICS          = True
 __C.YOLO.CONF_TH_FILE           = "./data/classes/recce.confidence_th.txt"
+__C.YOLO.USE_FUSED_BN           = True
 
 # Train options
 __C.TRAIN                       = edict()

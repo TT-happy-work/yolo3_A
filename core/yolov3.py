@@ -76,10 +76,10 @@ class YOLOV3(object):
         # NCHW
         if self.data_format == "NCHW":
             with tf.variable_scope('route_1'):
-                input_data = tf.concat([input_data, route_2], axis=1)
+                input_data = common.concat_wrapper([input_data, route_2], axis=1)
         else:
             with tf.variable_scope('route_1'):
-                input_data = tf.concat([input_data, route_2], axis=-1)
+                input_data = common.concat_wrapper([input_data, route_2], axis=-1)
 
 
         input_data = common.convolutional(input_data, (1, 1, 768, 256), self.trainable, 'conv58', data_format=self.data_format)
@@ -100,10 +100,10 @@ class YOLOV3(object):
         # NCHW
         if self.data_format == "NCHW":
             with tf.variable_scope('route_2'):
-                input_data = tf.concat([input_data, route_1], axis=1)
+                input_data = common.concat_wrapper([input_data, route_1], axis=1)
         else:
             with tf.variable_scope('route_2'):
-                input_data = tf.concat([input_data, route_1], axis=-1)
+                input_data = common.concat_wrapper([input_data, route_1], axis=-1)
 
         input_data = common.convolutional(input_data, (1, 1, 384, 128), self.trainable, 'conv64', data_format=self.data_format)
         input_data = common.convolutional(input_data, (3, 3, 128, 256), self.trainable, 'conv65', data_format=self.data_format)
@@ -146,7 +146,7 @@ class YOLOV3(object):
         y = tf.tile(tf.reshape(tf.range(output_h, dtype=tf.int32), (output_h, 1)), [1, output_w])
         x = tf.tile(tf.reshape(tf.range(output_w, dtype=tf.int32), (1, output_w)), [output_h, 1])
 
-        xy_grid = tf.concat([tf.reshape(x, (output_h, output_w, 1)), tf.reshape(y, (output_h, output_w, 1))], axis=-1)
+        xy_grid = common.concat_wrapper([tf.reshape(x, (output_h, output_w, 1)), tf.reshape(y, (output_h, output_w, 1))], axis=-1)
         xy_grid = tf.tile(tf.reshape(xy_grid, (1, output_h, output_w, 1, 2)), [batch_size, 1, 1, anchor_per_scale, 1])
         xy_grid = tf.cast(xy_grid, tf.float32)
 
@@ -154,12 +154,12 @@ class YOLOV3(object):
 
         pred_xy = (tf.sigmoid(conv_raw_dxdy) + xy_grid) * stride
         pred_wh = (tf.exp(conv_raw_dwdh) * anchors) * stride
-        pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
+        pred_xywh = common.concat_wrapper([pred_xy, pred_wh], axis=-1)
 
         pred_conf = tf.sigmoid(conv_raw_conf)
         pred_prob = tf.sigmoid(conv_raw_prob)
 
-        return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
+        return common.concat_wrapper([pred_xywh, pred_conf, pred_prob], axis=-1)
 
 
 
@@ -169,14 +169,14 @@ class YOLOV3(object):
 
     def bbox_giou(self, boxes1, boxes2):
 
-        boxes1 = tf.concat([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
+        boxes1 = common.concat_wrapper([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
                             boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
-        boxes2 = tf.concat([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
+        boxes2 = common.concat_wrapper([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
                             boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
-        boxes1 = tf.concat([tf.minimum(boxes1[..., :2], boxes1[..., 2:]),
+        boxes1 = common.concat_wrapper([tf.minimum(boxes1[..., :2], boxes1[..., 2:]),
                             tf.maximum(boxes1[..., :2], boxes1[..., 2:])], axis=-1)
-        boxes2 = tf.concat([tf.minimum(boxes2[..., :2], boxes2[..., 2:]),
+        boxes2 = common.concat_wrapper([tf.minimum(boxes2[..., :2], boxes2[..., 2:]),
                             tf.maximum(boxes2[..., :2], boxes2[..., 2:])], axis=-1)
 
         boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
@@ -203,9 +203,9 @@ class YOLOV3(object):
         boxes1_area = boxes1[..., 2] * boxes1[..., 3]
         boxes2_area = boxes2[..., 2] * boxes2[..., 3]
 
-        boxes1 = tf.concat([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
+        boxes1 = common.concat_wrapper([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
                             boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
-        boxes2 = tf.concat([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
+        boxes2 = common.concat_wrapper([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
                             boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
         left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])

@@ -11,8 +11,9 @@
 #
 #================================================================
 
-import cv2
 import os
+import cv2
+import time
 import shutil
 import numpy as np
 import tensorflow as tf
@@ -45,6 +46,7 @@ class YoloTest(object):
             self.trainable  = tf.placeholder(dtype=tf.bool,    name='trainable')
 
         model = YOLOV3(self.input_data, self.trainable)
+        self.conv_sbbox, self.conv_mbbox, self.conv_lbbox = model.conv_sbbox, model.conv_mbbox, model.conv_lbbox
         self.pred_sbbox, self.pred_mbbox, self.pred_lbbox = model.pred_sbbox, model.pred_mbbox, model.pred_lbbox
 
         with tf.name_scope('ema'):
@@ -96,6 +98,7 @@ class YoloTest(object):
         os.mkdir(os.path.join(self.write_image_path, reg_folder))
         os.mkdir(os.path.join(self.write_image_path, ROC_folder))
 
+        # TODO: Use Dataset.load_annotations (it does the some but need to be rewritten to allow such generic usage)
         with open(self.annotation_path, 'r') as annotation_file:
             home_dir = os.path.expanduser('~')
             if home_dir == '~':
@@ -170,6 +173,66 @@ class YoloTest(object):
                         f.write(bbox_mess)
                         print('\t' + str(bbox_mess).strip())
 
+    def pre_predict(self, image):
+        org_image = np.copy(image)
+        org_h, org_w, _ = org_image.shape
+
+        image_data = utils.image_preporcess(image, self.target_height, self.target_width)
+        image_data = image_data[np.newaxis, ...]
+
+        conv_sbbox, conv_mbbox, conv_lbbox = self.sess.run(
+            [self.conv_sbbox, self.conv_mbbox, self.conv_lbbox],
+            feed_dict={
+                self.input_data: image_data,
+                self.trainable: False
+            }
+        )
+        return conv_sbbox, conv_mbbox, conv_lbbox, org_h, org_w
+
+    def post_predict(self, conv_sbbox, conv_mbbox, conv_lbbox, org_h, org_w):
+        pred_sbbox, pred_mbbox, pred_lbbox = self.sess.run(
+            [self.pred_sbbox, self.pred_mbbox, self.pred_lbbox],
+            feed_dict={
+                self.conv_sbbox: conv_sbbox,
+                self.conv_mbbox: conv_mbbox,
+                self.conv_lbbox: conv_lbbox,
+                self.trainable: False
+            }
+        )
+        pred_bbox = np.concatenate([np.reshape(pred_sbbox, (-1, 5 + self.num_classes)),
+                                    np.reshape(pred_mbbox, (-1, 5 + self.num_classes)),
+                                    np.reshape(pred_lbbox, (-1, 5 + self.num_classes))], axis=0)
+        bboxes = utils.postprocess_boxes(pred_bbox, (org_h, org_w), self.target_height, self.target_width, self.score_threshold)
+        bboxes = utils.nms(bboxes, self.iou_threshold)
+
+        return bboxes
+
+    def measure_post_process_timings(self):
+        durations = []
+        with open(self.annotation_path, 'r') as annotation_file:
+            home_dir = os.path.expanduser('~')
+            if home_dir == '~':
+                home_dir = ''
+            for num, line in enumerate(annotation_file):
+                annotation = os.path.join(home_dir, line.strip()).split()
+                image_path = annotation[0]
+                assert os.path.isfile(image_path)
+                image_name = os.path.basename(image_path)
+                image = cv2.imread(image_path)
+                assert image is not None
+
+                # run the first phase of the prediction logic (up to the conv_{l,m,s}bbox)
+                input_for_post = self.pre_predict(image)
+                start_t = time.time()
+                _ = self.post_predict(*input_for_post)
+                end_t = time.time()
+                dur_s = end_t - start_t
+                durations += [dur_s]
+                #print("Last post-prediction took: %.3f seconds" % dur_s)
+                if len(durations) % 100 == 0:
+                    print("Post-prediction average duration for last 100 iterations took: %.3f seconds" % np.average(durations[-100:]))
+        print("Post-prediction average duration took: %.3f seconds" % np.average(durations))
+                        
     def voc_2012_test(self, voc2012_test_path):
 
         img_inds_file = os.path.join(voc2012_test_path, 'ImageSets', 'Main', 'test.txt')
@@ -205,3 +268,4 @@ if __name__ == '__main__':
     np.random.seed(0)
     tf.set_random_seed(0)
     YoloTest().evaluate()
+    # YoloTest().measure_post_process_timings()

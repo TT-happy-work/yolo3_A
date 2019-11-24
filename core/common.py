@@ -12,6 +12,7 @@
 #================================================================
 
 import tensorflow as tf
+from core.config import cfg
 from core.relu_and_mask import leaky_relu_and_mask
 
 
@@ -38,11 +39,12 @@ def convolutional(input_data, filters_shape, trainable, name, prune_flag=tf.cons
 
         if bn:
             conv = tf.contrib.layers.batch_norm(conv, param_initializers={'beta': tf.zeros_initializer(),
-                                                                              'gamma': tf.ones_initializer(),
-                                                                              'moving_mean': tf.zeros_initializer(),
-                                                                              'moving_variance': tf.ones_initializer()
-                                                                              },
-                                                                             is_training=trainable, data_format=data_format)
+                                                                          'gamma': tf.ones_initializer(),
+                                                                          'moving_mean': tf.zeros_initializer(),
+                                                                          'moving_variance': tf.ones_initializer()
+                                                                          },
+                                                is_training=trainable, data_format=data_format,
+                                                fused=cfg.YOLO.USE_FUSED_BN)
         else:
             bias = tf.get_variable(name='bias', shape=filters_shape[-1], trainable=True,
                                    dtype=tf.float32, initializer=tf.constant_initializer(0.0))
@@ -74,7 +76,7 @@ def residual_block(input_data, input_channel, filter_num1, filter_num2, trainabl
 def route(name, previous_output, current_output):
 
     with tf.variable_scope(name):
-        output = tf.concat([current_output, previous_output], axis=-1)
+        output = concat_wrapper([current_output, previous_output], axis=-1)
 
     return output
 
@@ -106,3 +108,9 @@ def upsample(input_data, name, method="deconv", data_format='NHWC'):
                                                 data_format='channels_last')
 
     return output
+
+
+# a wrapper around tf.concat to avoid the use of negative integer value as axis
+def concat_wrapper(values, axis, name="concat"):
+    axis = axis if axis >= 0 else values[0].shape.ndims + axis
+    return tf.concat(values, axis=axis)
