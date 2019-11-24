@@ -103,8 +103,10 @@ class YoloTest(object):
             for num, line in enumerate(annotation_file):
                 annotation = os.path.join(home_dir, line.strip()).split()
                 image_path = annotation[0]
-                image_name = image_path.split('/')[-1]
+                assert os.path.isfile(image_path)
+                image_name = os.path.basename(image_path)
                 image = cv2.imread(image_path)
+                assert image is not None
                 bbox_data_gt = np.array([list(map(float, box.split(','))) for box in annotation[1:]])
 
                 if len(bbox_data_gt) == 0:
