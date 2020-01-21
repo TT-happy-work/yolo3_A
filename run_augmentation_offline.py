@@ -1,63 +1,37 @@
 #! /usr/bin/env python
 # coding=utf-8
 #================================================================
-#   Copyright (C) 2019 * Ltd. All rights reserved.
-#
-#   Editor      : VIM
-#   File name   : train.py
-#   Author      : YunYang1994
-#   Created date: 2019-02-28 17:50:26
-#   Description :
-#
-#================================================================
-
-import os
-import time
-import shutil
+import argparse
 import numpy as np
 import tensorflow as tf
-import core.utils as utils
 from tqdm import tqdm
 from core.augment_offline import AugmentOffline
 from core.yolov3 import YOLOV3
 from core.config import cfg
-import datetime
-import subprocess as sp
+
+#################################################################
+# This code creates augmentations (images + bboxes) offline.
+# Possible augmentations: horizontal flip, vertical flip,
+# crop, translate, color channels swap.
+# Plase see input, output and possibilities under 'main'.
+# The code was based on train.py of YOLO_V3 but is done offline.
+#################################################################
 
 
 class AugmentationsOffline(object):
-    def __init__(self):
-        self.anchor_per_scale    = cfg.YOLO.ANCHOR_PER_SCALE
-        self.classes             = utils.read_class_names(cfg.YOLO.CLASSES)
-        self.num_classes         = len(self.classes)
+    def __init__(self, annot_path, output_path, aug_type):
         self.learn_rate_init     = cfg.TRAIN.LEARN_RATE_INIT
         self.learn_rate_end      = cfg.TRAIN.LEARN_RATE_END
         self.first_stage_epochs  = cfg.TRAIN.FISRT_STAGE_EPOCHS
         self.second_stage_epochs = cfg.TRAIN.SECOND_STAGE_EPOCHS
         self.warmup_periods      = cfg.TRAIN.WARMUP_EPOCHS
-        self.initial_weight      = cfg.TRAIN.INITIAL_WEIGHT
         self.chkpnt_to_restore   = cfg.TRAIN.RESTORE_CHKPT
-        self.time                = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
         self.moving_ave_decay    = cfg.YOLO.MOVING_AVE_DECAY
-        self.max_bbox_per_scale  = 150
-        self.train_logdir        = "./data/log/train"
-        self.trainset            = AugmentOffline()
-        self.testset             = AugmentOffline()
+        self.trainset            = AugmentOffline(annot_path, output_path, aug_type)
         self.steps_per_period    = len(self.trainset)
         self.sess                = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
-        self.folder_name         = cfg.YOLO.ROOT_DIR + cfg.YOLO.EXP_DIR
-
-        with tf.name_scope('output_folder'):
-            timestr = datetime.datetime.now().strftime('%d%h%y_%H%M')
-            for i in range(0, len(sp.getstatusoutput('git branch')[1].split())):
-                if sp.getstatusoutput('git branch')[1].split()[i] == '*':
-                    gitBranch = sp.getstatusoutput('git branch')[1].split()[i + 1]
-            gitCommitID = sp.getstatusoutput('git rev-parse --short HEAD')[1]
-            self.output_folder = os.path.join(self.folder_name[0] + self.folder_name[1] + '_' + timestr + '_' + gitCommitID)
-            if not os.path.exists(self.output_folder):
-                os.makedirs(self.output_folder)
-            cfg_new_path = os.path.join(self.output_folder, 'configFile.txt')
-            shutil.copyfile('./core/config.py', cfg_new_path)
+        self.annot_path          = annot_path
+        self.aug_type            = aug_type
 
         with tf.name_scope('define_input'):
             self.input_data   = tf.placeholder(dtype=tf.float32, name='input_data')
@@ -122,7 +96,6 @@ class AugmentationsOffline(object):
 
         with tf.name_scope('loader_and_saver'):
             self.loader = tf.train.Saver(self.net_var)
-            self.saver  = tf.train.Saver(tf.global_variables(), max_to_keep=10)
 
         with tf.name_scope('summary'):
             tf.summary.scalar("learn_rate",      self.learn_rate)
@@ -131,22 +104,15 @@ class AugmentationsOffline(object):
             tf.summary.scalar("prob_loss",  self.prob_loss)
             tf.summary.scalar("total_loss", self.loss)
 
-            logdir = self.output_folder + "/log/"
-            if os.path.exists(logdir): shutil.rmtree(logdir)
-            os.mkdir(logdir)
             self.write_op = tf.summary.merge_all()
-            self.summary_writer_train = tf.summary.FileWriter(logdir + "/train", graph=self.sess.graph)
-            self.summary_writer_test = tf.summary.FileWriter(logdir + "/test", graph=self.sess.graph)
 
-
-    def train(self):
+# this function calls AugmentOffline and creates the needed augmentation (image + bbox)
+    def augment(self):
         self.sess.run(tf.global_variables_initializer())
+
         try:
-            print('=> Restoring weights from: %s ... ' % self.chkpnt_to_restore)
             self.loader.restore(self.sess, self.chkpnt_to_restore)
         except:
-            print('=> %s does not exist !!!' % self.chkpnt_to_restore)
-            print('=> Now it starts to train YOLOV3 from scratch ...')
             self.first_stage_epochs = 0
 
         for epoch in range(1, 1+self.first_stage_epochs+self.second_stage_epochs):
@@ -171,40 +137,30 @@ class AugmentationsOffline(object):
                                                 self.trainable:    True,
                 })
 
-                train_epoch_loss.append(train_step_loss)
-                self.summary_writer_train.add_summary(summary, global_step_val)
-                pbar.set_description("train loss: %.2f" %train_step_loss)
-
-            for test_data in self.testset:
-                summary, test_step_loss = self.sess.run(
-                    [self.write_op, self.loss], feed_dict={
-                                                self.input_data:   test_data[0],
-                                                self.label_sbbox:  test_data[1],
-                                                self.label_mbbox:  test_data[2],
-                                                self.label_lbbox:  test_data[3],
-                                                self.true_sbboxes: test_data[4],
-                                                self.true_mbboxes: test_data[5],
-                                                self.true_lbboxes: test_data[6],
-                                                self.trainable:    False,
-                })
-
-                test_epoch_loss.append(test_step_loss)
-                self.summary_writer_test.add_summary(summary, global_step_val)
-
-            # train_epoch_loss, test_epoch_loss = np.mean(train_epoch_loss), np.mean(test_epoch_loss)
-            # ckpt_file = "/checkpoints/yolov3_epoch=%s_test_loss=%.4f.ckpt" % (epoch, test_epoch_loss)
-            # log_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-            # print("=> Epoch: %2d Time: %s Train loss: %.2f Test loss: %.2f Saving %s ..."
-            #                 %(epoch, log_time, train_epoch_loss, test_epoch_loss, self.output_folder + ckpt_file))
-            # self.saver.save(self.sess, save_path=os.path.join(self.output_folder + ckpt_file), global_step=epoch)
-
-
-
-if __name__ == '__main__':
+def main(annot_path, output_path, aug_type):
     np.random.seed(0)
     tf.set_random_seed(0)
-    AugmentationsOffline().train()
+    AugmentationsOffline(annot_path, output_path, aug_type).augment()
 
 
+# input: annotations path with txt files which look like: /home/mayarap/tamar_pc_DB/DBs/Reccelite_iter1/Taggings/all_imgs/0b0407e2-130c-d5a2-371c-041ca42ceb75_0_van.jpg 111.58578,5.8808684,173.12396,35.28521,1.0 370.00107,8.354597,429.82354999999995,39.444653,15.0 440.31635000000006,0.1369606,497.3369,29.455198,1.0
+# output: path for folder of augmentation images and txt file of their bbox annotations.
+# possible augmentation types: horizontal flip, vertical flip, crop, translate, color channels swap.
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(prog="Offline augmentations",
+                                     description="")
 
+    parser.add_argument('--annot_path',
+                        default="/home/mayarap/Reccelite/ourRep/yolo3_A/data/croppedtxt/Tagging4_cropReg.txt",
+                        help="recce data tagging txt file")
+    parser.add_argument('--output_path',
+                        default="/home/mayarap/tamar_pc_DB/DBs/Reccelite_iter1/Tagging4_cropReg_out",
+                        help="directory for augmentations output")
+    parser.add_argument('--aug_type',
+                        default='hflip',
+                        help="options are: 'hflip', 'vflip', 'crop', 'translate', 'color' ")
+
+    opts = parser.parse_args()
+
+    main(annot_path=opts.annot_path, output_path = opts.output_path, aug_type=opts.aug_type)

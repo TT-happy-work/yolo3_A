@@ -5,32 +5,23 @@ import numpy as np
 import tensorflow as tf
 import core.utils as utils
 from core.config import cfg
-import os
-import time
-import shutil
-import numpy as np
-import tensorflow as tf
-import core.utils as utils
-from tqdm import tqdm
-from core.dataset import Dataset
-from core.yolov3 import YOLOV3
-from core.config import cfg
-import datetime
-import subprocess as sp
 
+#################################################################
+# This code is called by run_augmentations_offline.py
+# for creating augmentations (images + bboxes) in output_path.
+# Possible augmentations: horizontal flip, vertical flip,
+# crop, translate, color channels swap.
+#################################################################
 
 class AugmentOffline(object):
-    """implement Dataset here"""
-    def __init__(self):
-        self.annot_path  = cfg.TRAIN.ANNOT_PATH
+    def __init__(self, annot_path, output_path, aug_type):
+        self.annot_path = annot_path
+        self.aug_type = aug_type
+        self.output_path = output_path
+
         self.input_height = cfg.TRAIN.IMAGE_H
         self.input_width = cfg.TRAIN.IMAGE_W
-
         self.batch_size  = cfg.TRAIN.BATCH_SIZE
-        self.data_aug    = cfg.TRAIN.DATA_AUG
-        self.aug_type    = cfg.TRAIN.AUG_TYPE
-        self.aug_path    = cfg.TRAIN.AUG_PATH
-
         self.strides = np.array(cfg.YOLO.STRIDES)
         self.classes = utils.read_class_names(cfg.YOLO.CLASSES)
         self.num_classes = len(self.classes)
@@ -38,15 +29,27 @@ class AugmentOffline(object):
         self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
         self.max_bbox_per_scale = 150
 
-        self.annotations = self.load_annotations()
+        self.annotations = self.load_annotations(self.annot_path)
         self.num_samples = len(self.annotations)
         self.num_batchs = int(np.ceil(self.num_samples / self.batch_size))
         self.batch_count = 0
 
         self.counter = 0
 
-    def load_annotations(self):
-        with open(self.annot_path, 'r') as f:
+        a_head, a_sep, a_tail = self.annot_path.partition('.')
+        annot_name = a_head.rsplit('/', 1)[1]
+
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+
+        if not os.path.exists(self.output_path + '/' + annot_name + '_bboxes_' + self.aug_type + '.txt'):
+            with open((self.output_path + '/' + annot_name + '_bboxes_' + self.aug_type + '.txt'), 'ab') as f:
+                f.close()
+        else:
+            os.remove(self.output_path + '/' + annot_name + '_bboxes_' + self.aug_type + '.txt')
+
+    def load_annotations(self, annot_path):
+        with open(annot_path, 'r') as f:
             txt = f.readlines()
             annotations = [line.strip() for line in txt if len(line.strip().split()[1:]) != 0]
         np.random.shuffle(annotations)
@@ -58,7 +61,6 @@ class AugmentOffline(object):
         return self
 
     def __next__(self):
-        self.counter = self.counter+1
         with tf.device('/cpu:0'):
             self.train_output_sizes_h = self.input_height // self.strides
             self.train_output_sizes_w = self.input_width // self.strides
@@ -83,7 +85,7 @@ class AugmentOffline(object):
                     index = self.batch_count * self.batch_size + num
                     if index >= self.num_samples: index -= self.num_samples
                     annotation = self.annotations[index]
-                    image, bboxes = self.parse_annotation(annotation, self.counter)
+                    image, bboxes, image_path = self.parse_annotation(annotation, self.counter)
                     label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes)
 
                     batch_image[num, :, :, :] = image
@@ -96,26 +98,41 @@ class AugmentOffline(object):
                     num += 1
                 self.batch_count += 1
 
-                name = self.aug_type
-#                cv2.imwrite(('/home/mayarap/tamar_pc_DB/DBs/Reccelite/Tagging_1_2_img/%s_colors.jpg' % self.counter), image)
-                cv2.imwrite((self.aug_path + str(self.counter) + '_' + name + '.jpg'), image)
+                self.counter = self.counter + 1
+                head, sep, tail = image_path.partition('.')
+                img_name = head.rsplit('/', 1)[1]
 
-                bboxes_to_print = ' '.join(map(str, bboxes.tolist())).replace("[", "").replace("]", "").replace("\n", "").replace(".0 "," ").replace(", ",",")
+                a_head, a_sep, a_tail = self.annot_path.partition('.')
+                annot_name = a_head.rsplit('/', 1)[1]
 
-                with open((self.aug_path + '/bboxes_' + name + '.txt'), 'ab') as f:
-                    f.write((self.aug_path + str(self.counter) + '_' + name + '.jpg ').encode())
+                if not os.path.exists(self.output_path + '/' + annot_name + '_aug_images/'):
+                    os.mkdir(self.output_path + '/' + annot_name + '_aug_images/')
+
+                cv2.imwrite((self.output_path + '/' + annot_name + '_aug_images/' + img_name + '_' + self.aug_type + '.' + tail), image)
+
+                bboxes_to_print = ' '.join(map(str, bboxes.tolist())).replace("[", "").replace("]", "").replace("\n", "").replace( ".0 ", " ").replace(", ", ",")
+
+                with open((self.output_path + '/' + annot_name + '_bboxes_' + self.aug_type + '.txt'), 'ab') as f:
+                    f.write((self.output_path + '/' + annot_name + '_aug_images/' + img_name + '_' + self.aug_type + '.' + tail + ' ').encode())
                     f.write(bboxes_to_print.encode())
                     f.write("\n".encode())
                     f.close()
 
-                if self.counter==85:
+                if self.counter == self.file_len(self.annot_path):
                     exit()
+
                 return batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox, \
                        batch_sbboxes, batch_mbboxes, batch_lbboxes
             else:
                 self.batch_count = 0
                 np.random.shuffle(self.annotations)
                 raise StopIteration
+
+    def file_len(self, fname):
+        with open(fname) as f:
+            for i, l in enumerate(f):
+                pass
+        return i
 
     def horizontal_flip(self, image, bboxes):
 
@@ -126,9 +143,17 @@ class AugmentOffline(object):
 
         return image, bboxes
 
+    def vertical_flip(self, image, bboxes):
+
+        h, _, _ = image.shape
+        image = image[::-1, :, :]
+        image = image[:, :, ::-1]
+        bboxes[:, [1,3]] = h - bboxes[:, [3,1]]
+
+        return image, bboxes
+
     def random_crop(self, image, bboxes):
 
-#        if random.random() < 0.5:
         h, w, _ = image.shape
         max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
 
@@ -152,24 +177,23 @@ class AugmentOffline(object):
 
     def random_translate(self, image, bboxes):
 
-        if random.random() < 0.5:
-            h, w, _ = image.shape
-            max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
+        h, w, _ = image.shape
+        max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
 
-            max_l_trans = max_bbox[0]
-            max_u_trans = max_bbox[1]
-            max_r_trans = w - max_bbox[2]
-            max_d_trans = h - max_bbox[3]
+        max_l_trans = max_bbox[0]
+        max_u_trans = max_bbox[1]
+        max_r_trans = w - max_bbox[2]
+        max_d_trans = h - max_bbox[3]
 
-            tx = random.uniform(-(max_l_trans - 1), (max_r_trans - 1))
-            ty = random.uniform(-(max_u_trans - 1), (max_d_trans - 1))
+        tx = random.uniform(-(max_l_trans - 1), (max_r_trans - 1))
+        ty = random.uniform(-(max_u_trans - 1), (max_d_trans - 1))
 
-            M = np.array([[1, 0, tx], [0, 1, ty]])
-            image = cv2.warpAffine(image, M, (w, h))
-            image = image[:, :, ::-1]
+        M = np.array([[1, 0, tx], [0, 1, ty]])
+        image = cv2.warpAffine(image, M, (w, h))
+        image = image[:, :, ::-1]
 
-            bboxes[:, [0, 2]] = bboxes[:, [0, 2]] + tx
-            bboxes[:, [1, 3]] = bboxes[:, [1, 3]] + ty
+        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] + tx
+        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] + ty
 
         return image, bboxes
 
@@ -193,22 +217,22 @@ class AugmentOffline(object):
         image = np.array(cv2.imread(image_path))
         bboxes = np.array([list(map(float, box.split(','))) for box in line[1:]])
 
-        if self.data_aug:
-            if self.aug_type == 'flip':
-                image, bboxes = self.horizontal_flip(np.copy(image), np.copy(bboxes))
-            elif self.aug_type == 'crop':
-                image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
-            elif self.aug_type == 'translate':
-                image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
-            elif self.aug_type == 'color':
-                image, bboxes = self.swap_colors(np.copy(image), np.copy(bboxes))
-            else:
-                raise ValueError("Wrong AUG_TYPE. Options are: 'flip', 'crop', 'translate', 'color'")
-        ####    image, bboxes = self.random_noise(np.copy(image), np.copy(bboxes))
+        if self.aug_type == 'hflip':
+            image, bboxes = self.horizontal_flip(np.copy(image), np.copy(bboxes))
+        elif self.aug_type == 'vflip':
+            image, bboxes = self.vertical_flip(np.copy(image), np.copy(bboxes))
+        elif self.aug_type == 'crop':
+            image, bboxes = self.random_crop(np.copy(image), np.copy(bboxes))
+        elif self.aug_type == 'translate':
+            image, bboxes = self.random_translate(np.copy(image), np.copy(bboxes))
+        elif self.aug_type == 'color':
+            image, bboxes = self.swap_colors(np.copy(image), np.copy(bboxes))
+        else:
+            raise ValueError("Wrong AUG_TYPE. Options are: 'hflip', 'vflip', 'crop', 'translate', 'color'")
 
         image, bboxes = utils.image_preporcess(np.copy(image), self.input_height, self.input_width, np.copy(bboxes))
 
-        return image, bboxes
+        return image, bboxes, image_path
 
     def bbox_iou(self, boxes1, boxes2):
 
@@ -308,15 +332,6 @@ class AugmentOffline(object):
         return self.num_batchs
 
 
-    # def aug(self):
-    #     self.sess.run(tf.global_variables_initializer())
-    #     try:
-    #         print('=> Augmenting dataset')
-    #         image, bboxes = self.parse_annotation(annotation)
-    #     except:
-    #         print('=> %s does not exist !!!' % self.chkpnt_to_restore)
-    #         print('=> Now it starts to train YOLOV3 from scratch ...')
-    #         self.first_stage_epochs = 0
 
 
 
